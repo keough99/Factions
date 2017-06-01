@@ -1,78 +1,39 @@
 package com.massivecraft.factions.cmd.type;
 
-import java.util.Collection;
-import java.util.Collections;
-import java.util.Comparator;
-import java.util.List;
-
-import org.bukkit.command.CommandSender;
-
-import com.massivecraft.factions.PlayerInactivityComparator;
-import com.massivecraft.factions.PlayerPowerComparator;
-import com.massivecraft.factions.PlayerRoleComparator;
+import com.massivecraft.factions.comparator.ComparatorMPlayerInactivity;
+import com.massivecraft.factions.comparator.ComparatorMPlayerPower;
+import com.massivecraft.factions.comparator.ComparatorMPlayerRole;
 import com.massivecraft.factions.entity.MPlayer;
-import com.massivecraft.massivecore.cmd.type.TypeAbstractSelect;
-import com.massivecraft.massivecore.util.MUtil;
+import com.massivecraft.massivecore.command.type.TypeAbstractChoice;
 
-public class TypeSortMPlayer extends TypeAbstractSelect<Comparator<MPlayer>>
+import java.util.Comparator;
+
+public class TypeSortMPlayer extends TypeAbstractChoice<Comparator<MPlayer>>
 {
-	// -------------------------------------------- //
-	// CONSTANTS
-	// -------------------------------------------- //
-	
-	public static final List<String> ALT_NAMES = Collections.unmodifiableList(MUtil.list("rank", "power", "time"));
-	
 	// -------------------------------------------- //
 	// INSTANCE & CONSTRUCT
 	// -------------------------------------------- //
 	
 	private static TypeSortMPlayer i = new TypeSortMPlayer();
 	public static TypeSortMPlayer get() { return i; }
+	public TypeSortMPlayer()
+	{
+		super(Comparator.class);
+		this.setAll(
+			ComparatorMPlayerRole.get(),
+			ComparatorMPlayerPower.get(),
+			ComparatorMPlayerInactivity.get()
+		);
+	}
 	
 	// -------------------------------------------- //
 	// OVERRIDE
 	// -------------------------------------------- //
 	
 	@Override
-	public String getTypeName()
+	public String getName()
 	{
 		return "player sorter";
-	}
-
-	@Override
-	public Comparator<MPlayer> select(String sortedBy, CommandSender sender)
-	{
-		sortedBy = sortedBy.toLowerCase();
-		
-		if (sortedBy.startsWith("r"))
-		{
-			// Sort by rank
-			return PlayerRoleComparator.get();
-		}
-		else if (sortedBy.startsWith("p"))
-		{
-			// Sort by power
-			return PlayerPowerComparator.get();
-		}
-		else if (sortedBy.startsWith("t"))
-		{
-			// Sort by time
-			return PlayerInactivityComparator.get();
-		}
-		
-		return null;
-	}
-
-	@Override
-	public Collection<String> altNames(CommandSender sender)
-	{
-		return ALT_NAMES;
-	}
-
-	@Override
-	public Collection<String> getTabList(CommandSender sender, String arg)
-	{
-		return this.altNames(sender);
 	}
 	
 }

@@ -1,16 +1,14 @@
 package com.massivecraft.factions.cmd;
 
-import org.bukkit.ChatColor;
-
 import com.massivecraft.factions.Perm;
 import com.massivecraft.factions.cmd.type.TypeMPlayer;
 import com.massivecraft.factions.entity.MPerm;
 import com.massivecraft.factions.entity.MPlayer;
 import com.massivecraft.factions.event.EventFactionsTitleChange;
 import com.massivecraft.massivecore.MassiveException;
-import com.massivecraft.massivecore.cmd.req.ReqHasPerm;
-import com.massivecraft.massivecore.cmd.type.TypeString;
+import com.massivecraft.massivecore.command.type.primitive.TypeString;
 import com.massivecraft.massivecore.util.Txt;
+import org.bukkit.ChatColor;
 
 public class CmdFactionsTitle extends FactionsCommand
 {
@@ -20,15 +18,9 @@ public class CmdFactionsTitle extends FactionsCommand
 	
 	public CmdFactionsTitle()
 	{
-		// Aliases
-		this.addAliases("title");
-
 		// Parameters
 		this.addParameter(TypeMPlayer.get(), "player");
 		this.addParameter(TypeString.get(), "title", "", true);
-
-		// Requirements
-		this.addRequirements(ReqHasPerm.get(Perm.TITLE.node));
 	}
 
 	// -------------------------------------------- //
@@ -52,7 +44,7 @@ public class CmdFactionsTitle extends FactionsCommand
 		if ( ! MPerm.getPermTitle().has(msender, you.getFaction(), true)) return;
 		
 		// Rank Check
-		if (!msender.isUsingAdminMode() && you.getRole().isMoreThan(msender.getRole()))
+		if (!msender.isOverriding() && you.getRole().isMoreThan(msender.getRole()))
 		{
 			msg("<b>You can not edit titles for higher ranks.");
 			return;

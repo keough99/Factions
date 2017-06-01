@@ -1,28 +1,28 @@
 package com.massivecraft.factions.integration.worldguard;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
-
-import org.bukkit.Bukkit;
-import org.bukkit.event.EventHandler;
-import org.bukkit.event.EventPriority;
-import org.bukkit.plugin.Plugin;
-
-import com.massivecraft.factions.Factions;
 import com.massivecraft.factions.entity.MConf;
 import com.massivecraft.factions.entity.MFlag;
 import com.massivecraft.factions.entity.MPlayer;
 import com.massivecraft.factions.event.EventFactionsChunksChange;
-import com.massivecraft.massivecore.EngineAbstract;
+import com.massivecraft.massivecore.Engine;
 import com.massivecraft.massivecore.ps.PS;
 import com.sk89q.worldedit.BlockVector;
+import com.sk89q.worldguard.LocalPlayer;
+import com.sk89q.worldguard.bukkit.WGBukkit;
 import com.sk89q.worldguard.bukkit.WorldGuardPlugin;
 import com.sk89q.worldguard.protection.managers.RegionManager;
+import com.sk89q.worldguard.protection.regions.GlobalProtectedRegion;
 import com.sk89q.worldguard.protection.regions.ProtectedCuboidRegion;
 import com.sk89q.worldguard.protection.regions.ProtectedRegion;
+import org.bukkit.entity.Player;
+import org.bukkit.event.EventHandler;
+import org.bukkit.event.EventPriority;
 
-public class EngineWorldGuard extends EngineAbstract
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
+
+public class EngineWorldGuard extends Engine
 {
 	// -------------------------------------------- //
 	// INSTANCE & CONSTRUCT
@@ -30,7 +30,6 @@ public class EngineWorldGuard extends EngineAbstract
 	
 	private static EngineWorldGuard i = new EngineWorldGuard();
 	public static EngineWorldGuard get() { return i; }
-	private EngineWorldGuard() {}
 	
 	// -------------------------------------------- //
 	// FIELDS
@@ -43,25 +42,16 @@ public class EngineWorldGuard extends EngineAbstract
 	// -------------------------------------------- //
 	
 	@Override
-	public Plugin getPlugin()
+	public void setActiveInner(boolean active)
 	{
-		return Factions.get();
-	}
-	
-	@Override
-	public void activate()
-	{
-		this.worldGuard = (WorldGuardPlugin) Bukkit.getPluginManager().getPlugin("WorldGuard");
-		
-		super.activate();
-	}
-	
-	@Override
-	public void deactivate()
-	{		
-		this.worldGuard = null;
-		
-		super.deactivate();
+		if (active)
+		{
+			this.worldGuard = WGBukkit.getPlugin();
+		}
+		else
+		{
+			this.worldGuard = null;
+		}
 	}
 	
 	// -------------------------------------------- //
@@ -77,31 +67,37 @@ public class EngineWorldGuard extends EngineAbstract
 		// Permanent Factions should not apply this rule 
 		if (event.getNewFaction().getFlag(MFlag.ID_PERMANENT)) return;
 		
-		MPlayer mplayer = event.getMSender();
+		MPlayer mplayer = event.getMPlayer();
+		Player player = mplayer.getPlayer();
 		
-		if ( ! MConf.get().worldguardCheckWorldsEnabled.contains(mplayer.getPlayer())) return;
+		// Only do this for players 
+		if (player == null) return;
+		
+		LocalPlayer wrapperPlayer = this.worldGuard.wrapPlayer(player);
+		
+		if ( ! MConf.get().worldguardCheckWorldsEnabled.contains(player)) return;
 
-		// For admins don't bother checking 
-		if (mplayer.isUsingAdminMode()) return; 
+		// For overriders don't bother checking 
+		if (mplayer.isOverriding()) return; 
 		
-		for (PS chunkChecking : event.getChunks())
+		for (PS chunk : event.getChunks())
 		{
 			// Grab any regions in the chunk
-			List<ProtectedRegion> regions = this.getProtectedRegionsFor(chunkChecking);
+			final List<ProtectedRegion> regions = this.getProtectedRegionsFor(chunk);
 			
 			// Ensure there are actually regions to go over 
 			if (regions == null || regions.isEmpty()) continue;
 			
 			for (ProtectedRegion region : regions)
 			{
-				// Ensure it's not the global region, and check if they're a member 
-				if (region.getId().equals("__global__") || region.getMembers().contains(mplayer.getUuid())) continue;
+				// Ensure it's not the global region, and check if they're a member
+				if (region instanceof GlobalProtectedRegion || region.isMember(wrapperPlayer)) continue;
 				
-				// Check for a permission
-				if (mplayer.getPlayer().hasPermission("factions.allowregionclaim." + region.getId())) continue;
+				// Check for a permission - can't use Perm enum for this 
+				if (player.hasPermission("factions.allowregionclaim." + region.getId())) continue;
 				
 				// No permission, notify player and stop claiming
-				mplayer.msg("<b>You cannot claim the chunk at %s, %s as there is a region in the way.", chunkChecking.getChunkX(), chunkChecking.getChunkZ());
+				mplayer.msg("<b>You cannot claim the chunk at %s, %s as there is a region in the way.", chunk.getChunkX(), chunk.getChunkZ());
 				
 				event.setCancelled(true);
 				return;
@@ -122,7 +118,7 @@ public class EngineWorldGuard extends EngineAbstract
 		int maxChunkZ = minChunkZ + 15;
 		
 		int worldHeight = ps.asBukkitWorld().getMaxHeight();
-
+		
 		BlockVector minChunk = new BlockVector(minChunkX, 0, minChunkZ);
 		BlockVector maxChunk = new BlockVector(maxChunkX, worldHeight, maxChunkZ);
 		
@@ -132,7 +128,7 @@ public class EngineWorldGuard extends EngineAbstract
 		ProtectedCuboidRegion region = new ProtectedCuboidRegion(regionName, minChunk, maxChunk);
 		
 		Map<String, ProtectedRegion> regionMap = regionManager.getRegions(); 
-		List<ProtectedRegion> regionList = new ArrayList<ProtectedRegion>(regionMap.values());
+		List<ProtectedRegion> regionList = new ArrayList<>(regionMap.values());
 		
 		// Let's find what we've overlapped
 		List<ProtectedRegion> overlapRegions = region.getIntersectingRegions(regionList);

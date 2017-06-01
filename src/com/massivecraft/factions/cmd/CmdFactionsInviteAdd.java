@@ -1,36 +1,29 @@
 package com.massivecraft.factions.cmd;
 
-import java.util.Collection;
-
-import org.bukkit.ChatColor;
-
-import com.massivecraft.factions.Factions;
-import com.massivecraft.factions.Perm;
 import com.massivecraft.factions.cmd.type.TypeMPlayer;
+import com.massivecraft.factions.entity.Invitation;
 import com.massivecraft.factions.entity.MPerm;
 import com.massivecraft.factions.entity.MPlayer;
 import com.massivecraft.factions.event.EventFactionsInvitedChange;
 import com.massivecraft.massivecore.MassiveException;
-import com.massivecraft.massivecore.cmd.req.ReqHasPerm;
-import com.massivecraft.massivecore.cmd.type.TypeSet;
+import com.massivecraft.massivecore.command.type.container.TypeSet;
 import com.massivecraft.massivecore.mson.Mson;
+import com.massivecraft.massivecore.util.IdUtil;
 import com.massivecraft.massivecore.util.Txt;
+import org.bukkit.ChatColor;
+
+import java.util.Collection;
 
 public class CmdFactionsInviteAdd extends FactionsCommand
 {
 	// -------------------------------------------- //
 	// CONSTRUCT
 	// -------------------------------------------- //
+
 	public CmdFactionsInviteAdd()
 	{
-		// Aliases
-		this.addAliases("add");
-
 		// Parameters
-		this.addParameter(TypeSet.get(TypeMPlayer.get(), true), "players", true);
-		
-		// Requirements
-		this.addRequirements(ReqHasPerm.get(Perm.INVITE_ADD.node));
+		this.addParameter(TypeSet.get(TypeMPlayer.get()), "players", true);
 	}
 	
 	// -------------------------------------------- //
@@ -43,6 +36,9 @@ public class CmdFactionsInviteAdd extends FactionsCommand
 		// Args
 		Collection<MPlayer> mplayers = this.readArg();
 		
+		String senderId = IdUtil.getId(sender);
+		long creationMillis = System.currentTimeMillis();
+		
 		// MPerm
 		if ( ! MPerm.getPermInvite().has(msender, msenderFaction, true)) return;
 		
@@ -51,7 +47,7 @@ public class CmdFactionsInviteAdd extends FactionsCommand
 			// Already member?
 			if (mplayer.getFaction() == msenderFaction)
 			{
-				msg("%s<i> is already a member of %s<i>.", mplayer.getName(), msenderFaction.getName());
+				msg("%s<i> is already a member of %s<i>.", mplayer.getName(), msenderFaction.getName(msender));
 				continue;
 			}
 			
@@ -71,12 +67,14 @@ public class CmdFactionsInviteAdd extends FactionsCommand
 				msenderFaction.msg("%s<i> invited %s<i> to your faction.", msender.describeTo(msenderFaction, true), mplayer.describeTo(msenderFaction));
 				
 				// Apply
-				msenderFaction.setInvited(mplayer, true);
+				Invitation invitation = new Invitation(senderId, creationMillis);
+				msenderFaction.invite(mplayer.getId(), invitation);
+				msenderFaction.changed();
 			}
 			else
 			{
 				// Mson
-				String command = Factions.get().getOuterCmdFactions().cmdFactionsInvite.cmdFactionsInviteRemove.getCommandLine(mplayer.getName());
+				String command = CmdFactions.get().cmdFactionsInvite.cmdFactionsInviteRemove.getCommandLine(mplayer.getName());
 				String tooltip = Txt.parse("<i>Click to <c>%s<i>.", command);
 				
 				Mson remove = Mson.mson(
@@ -85,7 +83,7 @@ public class CmdFactionsInviteAdd extends FactionsCommand
 				);
 				
 				// Inform
-				msg("%s <i>is already invited to %s<i>.", mplayer.getName(), msenderFaction.getName());
+				msg("%s <i>is already invited to %s<i>.", mplayer.getName(), msenderFaction.getName(msender));
 				message(remove);
 			}
 		}

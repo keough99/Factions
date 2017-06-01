@@ -1,26 +1,23 @@
 package com.massivecraft.factions.cmd;
 
-import java.util.Collections;
-import java.util.Comparator;
-import java.util.LinkedHashMap;
-import java.util.List;
-
-import com.massivecraft.factions.Perm;
-import com.massivecraft.factions.PlayerInactivityComparator;
+import com.massivecraft.factions.comparator.ComparatorMPlayerInactivity;
 import com.massivecraft.factions.cmd.type.TypeFaction;
 import com.massivecraft.factions.cmd.type.TypeSortMPlayer;
 import com.massivecraft.factions.entity.Faction;
 import com.massivecraft.factions.entity.MPerm;
 import com.massivecraft.factions.entity.MPlayer;
 import com.massivecraft.massivecore.MassiveException;
-import com.massivecraft.massivecore.cmd.Parameter;
-import com.massivecraft.massivecore.cmd.req.ReqHasPerm;
+import com.massivecraft.massivecore.command.Parameter;
 import com.massivecraft.massivecore.pager.Pager;
 import com.massivecraft.massivecore.pager.Stringifier;
 import com.massivecraft.massivecore.util.TimeDiffUtil;
 import com.massivecraft.massivecore.util.TimeUnit;
 import com.massivecraft.massivecore.util.Txt;
 
+import java.util.Collections;
+import java.util.Comparator;
+import java.util.LinkedHashMap;
+import java.util.List;
 
 public class CmdFactionsStatus extends FactionsCommand
 {
@@ -30,16 +27,10 @@ public class CmdFactionsStatus extends FactionsCommand
 	
 	public CmdFactionsStatus()
 	{
-		// Aliases
-		this.addAliases("s", "status");
-
 		// Parameters
 		this.addParameter(Parameter.getPage());
 		this.addParameter(TypeFaction.get(), "faction", "you");
-		this.addParameter(TypeSortMPlayer.get(), "sort by", "time");
-
-		// Requirements
-		this.addRequirements(ReqHasPerm.get(Perm.STATUS.node));
+		this.addParameter(TypeSortMPlayer.get(), "sort", "time");
 	}
 
 	// -------------------------------------------- //
@@ -52,7 +43,7 @@ public class CmdFactionsStatus extends FactionsCommand
 		// Args
 		int page = this.readArg();
 		Faction faction = this.readArg(msenderFaction);
-		Comparator<MPlayer> sortedBy = this.readArg(PlayerInactivityComparator.get());
+		Comparator<MPlayer> sortedBy = this.readArg(ComparatorMPlayerInactivity.get());
 
 		// MPerm
 		if ( ! MPerm.getPermStatus().has(msender, faction, true)) return;
@@ -63,7 +54,8 @@ public class CmdFactionsStatus extends FactionsCommand
 		
 		// Pager Create
 		String title = Txt.parse("<i>Status of %s<i>.", faction.describeTo(msender, true));
-		final Pager<MPlayer> pager = new Pager<MPlayer>(this, title, page, mplayers, new Stringifier<MPlayer>(){
+		final Pager<MPlayer> pager = new Pager<>(this, title, page, mplayers, new Stringifier<MPlayer>()
+		{
 			@Override
 			public String toString(MPlayer mplayer, int index)
 			{
@@ -95,7 +87,7 @@ public class CmdFactionsStatus extends FactionsCommand
 				{
 					color = "<red>";
 				}
-			
+				
 				String power = Txt.parse("<art>Power: %s%.0f<gray>/<green>%.0f", Txt.parse(color), currentPower, maxPower);
 				
 				// Time

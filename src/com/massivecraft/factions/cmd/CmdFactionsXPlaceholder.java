@@ -16,6 +16,7 @@ public class CmdFactionsXPlaceholder extends FactionsCommand
 	{
 		// Fields
 		this.extensionName = extensionName;
+		this.setSetupEnabled(false);
 		
 		// Aliases
 		this.addAliases(aliases);
@@ -36,7 +37,7 @@ public class CmdFactionsXPlaceholder extends FactionsCommand
 	{
 		msg("<b>The extension <h>%s <b>isn't installed.", this.extensionName);
 		msg("<g>Learn more and download the extension here:");
-		msg("<aqua>http://www.massivecraft.com/%s", this.extensionName.toLowerCase());
+		msg("<aqua>https://www.massivecraft.com/%s", this.extensionName.toLowerCase());
 	}
 	
 }

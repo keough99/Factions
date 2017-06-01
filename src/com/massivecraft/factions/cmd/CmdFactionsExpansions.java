@@ -1,27 +1,12 @@
 package com.massivecraft.factions.cmd;
 
-import java.util.Map.Entry;
-
 import com.massivecraft.factions.event.EventFactionsExpansions;
-import com.massivecraft.factions.Perm;
-import com.massivecraft.massivecore.cmd.req.ReqHasPerm;
 import com.massivecraft.massivecore.util.Txt;
+
+import java.util.Map.Entry;
 
 public class CmdFactionsExpansions extends FactionsCommand
 {
-	// -------------------------------------------- //
-	// CONSTRUCT
-	// -------------------------------------------- //
-	
-	public CmdFactionsExpansions()
-	{
-		// Aliases
-		this.addAliases("expansions");
-
-		// Requirements
-		this.addRequirements(ReqHasPerm.get(Perm.EXPANSIONS.node));
-	}
-
 	// -------------------------------------------- //
 	// OVERRIDE
 	// -------------------------------------------- //
@@ -34,7 +19,9 @@ public class CmdFactionsExpansions extends FactionsCommand
 		event.run();
 		
 		// Title
-		msg(Txt.titleize("Factions Expansions"));
+		Object title = "Factions Expansions";
+		title = Txt.titleize(title);
+		message(title);
 		
 		// Lines
 		for (Entry<String, Boolean> entry : event.getExpansions().entrySet())
@@ -47,7 +34,7 @@ public class CmdFactionsExpansions extends FactionsCommand
 		
 		// URL Suggestion
 		msg("<i>Learn all about expansions in the online documentation:");
-		msg("<aqua>http://www.massivecraft.com/factions");
+		msg("<aqua>https://www.massivecraft.com/factions");
 	}
 	
 }

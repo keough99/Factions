@@ -1,9 +1,8 @@
 package com.massivecraft.factions.event;
 
-import org.bukkit.command.CommandSender;
-
 import com.massivecraft.factions.entity.MPlayer;
 import com.massivecraft.massivecore.event.EventMassiveCore;
+import org.bukkit.command.CommandSender;
 
 public abstract class EventFactionsAbstractSender extends EventMassiveCore
 {
@@ -13,7 +12,7 @@ public abstract class EventFactionsAbstractSender extends EventMassiveCore
 	
 	private final CommandSender sender;
 	public CommandSender getSender() { return this.sender; }
-	public MPlayer getMSender() { return this.sender == null ? null : MPlayer.get(this.sender); }
+	public MPlayer getMPlayer() { return this.sender == null ? null : MPlayer.get(this.sender); }
 	
 	// -------------------------------------------- //
 	// CONSTRUCT
@@ -29,4 +28,5 @@ public abstract class EventFactionsAbstractSender extends EventMassiveCore
 		super(async);
 		this.sender = sender;
 	}
+	
 }

@@ -1,12 +1,9 @@
 package com.massivecraft.factions.entity;
 
+import com.massivecraft.massivecore.store.Coll;
+
 import java.util.ArrayList;
 import java.util.List;
-
-import com.massivecraft.factions.Const;
-import com.massivecraft.factions.Factions;
-import com.massivecraft.massivecore.store.Coll;
-import com.massivecraft.massivecore.store.MStore;
 
 public class MPermColl extends Coll<MPerm>
 {
@@ -18,7 +15,7 @@ public class MPermColl extends Coll<MPerm>
 	public static MPermColl get() { return i; }
 	private MPermColl()
 	{
-		super(Const.COLLECTION_MPERM, MPerm.class, MStore.getDb(), Factions.get(), false, true, false);
+		this.setLowercasing(true);
 	}
 
 	// -------------------------------------------- //
@@ -36,9 +33,10 @@ public class MPermColl extends Coll<MPerm>
 	// -------------------------------------------- //
 	
 	@Override
-	public void init()
+	public void setActive(boolean active)
 	{
-		super.init();
+		super.setActive(active);
+		if (!active) return;
 		MPerm.setupStandardPerms();
 	}
 	
@@ -48,12 +46,17 @@ public class MPermColl extends Coll<MPerm>
 	
 	public List<MPerm> getAll(boolean registered)
 	{
-		List<MPerm> ret = new ArrayList<MPerm>();
+		// Create
+		List<MPerm> ret = new ArrayList<>();
+		
+		// Fill
 		for (MPerm mperm : this.getAll())
 		{
 			if (mperm.isRegistered() != registered) continue;
 			ret.add(mperm);
 		}
+		
+		// Return
 		return ret;
 	}
 	

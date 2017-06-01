@@ -1,17 +1,19 @@
 package com.massivecraft.factions.entity;
 
-import java.util.List;
-
 import com.massivecraft.factions.event.EventFactionsCreateFlags;
-import com.massivecraft.massivecore.PredicateIsRegistered;
+import com.massivecraft.massivecore.Named;
 import com.massivecraft.massivecore.Prioritized;
-import com.massivecraft.massivecore.PriorityComparator;
 import com.massivecraft.massivecore.Registerable;
 import com.massivecraft.massivecore.collections.MassiveList;
+import com.massivecraft.massivecore.comparator.ComparatorSmart;
+import com.massivecraft.massivecore.predicate.PredicateIsRegistered;
 import com.massivecraft.massivecore.store.Entity;
 import com.massivecraft.massivecore.util.Txt;
+import org.bukkit.ChatColor;
 
-public class MFlag extends Entity<MFlag> implements Prioritized, Registerable
+import java.util.List;
+
+public class MFlag extends Entity<MFlag> implements Prioritized, Registerable, Named
 {
 	// -------------------------------------------- //
 	// CONSTANTS
@@ -21,29 +23,33 @@ public class MFlag extends Entity<MFlag> implements Prioritized, Registerable
 	public final static transient String ID_MONSTERS = "monsters";
 	public final static transient String ID_ANIMALS = "animals";
 	public final static transient String ID_POWERLOSS = "powerloss";
+	public final static transient String ID_POWERGAIN = "powergain";
 	public final static transient String ID_PVP = "pvp";
 	public final static transient String ID_FRIENDLYFIRE = "friendlyfire";
 	public final static transient String ID_EXPLOSIONS = "explosions";
 	public final static transient String ID_OFFLINEEXPLOSIONS = "offlineexplosions";
 	public final static transient String ID_FIRESPREAD = "firespread";
 	public final static transient String ID_ENDERGRIEF = "endergrief";
+	public final static transient String ID_ZOMBIEGRIEF = "zombiegrief";
 	public final static transient String ID_PERMANENT = "permanent";
 	public final static transient String ID_PEACEFUL = "peaceful";
 	public final static transient String ID_INFPOWER = "infpower";
 	
-	public final static transient int PRIORITY_OPEN = 1000;
-	public final static transient int PRIORITY_MONSTERS = 2000;
-	public final static transient int PRIORITY_ANIMALS = 2500;
-	public final static transient int PRIORITY_POWERLOSS = 3000;
-	public final static transient int PRIORITY_PVP = 4000;
-	public final static transient int PRIORITY_FRIENDLYFIRE = 5000;
-	public final static transient int PRIORITY_EXPLOSIONS = 6000;
-	public final static transient int PRIORITY_OFFLINEEXPLOSIONS = 7000;
-	public final static transient int PRIORITY_FIRESPREAD = 8000;
-	public final static transient int PRIORITY_ENDERGRIEF = 9000;
-	public final static transient int PRIORITY_PERMANENT = 10000;
-	public final static transient int PRIORITY_PEACEFUL = 11000;
-	public final static transient int PRIORITY_INFPOWER = 12000;
+	public final static transient int PRIORITY_OPEN = 1_000;
+	public final static transient int PRIORITY_MONSTERS = 2_000;
+	public final static transient int PRIORITY_ANIMALS = 3_000;
+	public final static transient int PRIORITY_POWERLOSS = 4_000;
+	public final static transient int PRIORITY_POWERGAIN = 5_000;
+	public final static transient int PRIORITY_PVP = 6_000;
+	public final static transient int PRIORITY_FRIENDLYFIRE = 7_000;
+	public final static transient int PRIORITY_EXPLOSIONS = 8_000;
+	public final static transient int PRIORITY_OFFLINEEXPLOSIONS = 9_000;
+	public final static transient int PRIORITY_FIRESPREAD = 10_000;
+	public final static transient int PRIORITY_ENDERGRIEF = 11_000;
+	public final static transient int PRIORITY_ZOMBIEGRIEF = 12_000;
+	public final static transient int PRIORITY_PERMANENT = 13_000;
+	public final static transient int PRIORITY_PEACEFUL = 14_000;
+	public final static transient int PRIORITY_INFPOWER = 15_000;
 	
 	// -------------------------------------------- //
 	// META: CORE
@@ -63,7 +69,7 @@ public class MFlag extends Entity<MFlag> implements Prioritized, Registerable
 	{
 		setupStandardFlags();
 		new EventFactionsCreateFlags(isAsync).run();
-		return MFlagColl.get().getAll(PredicateIsRegistered.get(), PriorityComparator.get());
+		return MFlagColl.get().getAll(PredicateIsRegistered.get(), ComparatorSmart.get());
 	}
 	
 	public static void setupStandardFlags()
@@ -72,12 +78,14 @@ public class MFlag extends Entity<MFlag> implements Prioritized, Registerable
 		getFlagMonsters();
 		getFlagAnimals();
 		getFlagPowerloss();
+		getFlagPowergain();
 		getFlagPvp();
 		getFlagFriendlyire();
 		getFlagExplosions();
 		getFlagOfflineexplosions();
 		getFlagFirespread();
 		getFlagEndergrief();
+		getFlagZombiegrief();
 		getFlagPermanent();
 		getFlagPeaceful();
 		getFlagInfpower();
@@ -87,12 +95,14 @@ public class MFlag extends Entity<MFlag> implements Prioritized, Registerable
 	public static MFlag getFlagMonsters() { return getCreative(PRIORITY_MONSTERS, ID_MONSTERS, ID_MONSTERS, "Can monsters spawn in this territory?", "Monsters can spawn in this territory.", "Monsters can NOT spawn in this territory.", false, true, true); }
 	public static MFlag getFlagAnimals() { return getCreative(PRIORITY_ANIMALS, ID_ANIMALS, ID_ANIMALS, "Can animals spawn in this territory?", "Animals can spawn in this territory.", "Animals can NOT spawn in this territory.", true, true, true); }
 	public static MFlag getFlagPowerloss() { return getCreative(PRIORITY_POWERLOSS, ID_POWERLOSS, ID_POWERLOSS, "Is power lost on death in this territory?", "Power is lost on death in this territory.", "Power is NOT lost on death in this territory.", true, false, true); }
+	public static MFlag getFlagPowergain() { return getCreative(PRIORITY_POWERGAIN, ID_POWERGAIN, ID_POWERGAIN, "Can power be gained in this territory?", "Power can be gained in this territory.", "Power is NOT gained in this territory.", true, false, true); }
 	public static MFlag getFlagPvp() { return getCreative(PRIORITY_PVP, ID_PVP, ID_PVP, "Can you PVP in territory?", "You can PVP in this territory.", "You can NOT PVP in this territory.", true, false, true); }
 	public static MFlag getFlagFriendlyire() { return getCreative(PRIORITY_FRIENDLYFIRE, ID_FRIENDLYFIRE, ID_FRIENDLYFIRE, "Can friends hurt eachother in this territory?", "Friendly fire is on here.", "Friendly fire is off here.", false, false, true); }
 	public static MFlag getFlagExplosions() { return getCreative(PRIORITY_EXPLOSIONS, ID_EXPLOSIONS, ID_EXPLOSIONS, "Can explosions occur in this territory?", "Explosions can occur in this territory.", "Explosions can NOT occur in this territory.", true, false, true); }
 	public static MFlag getFlagOfflineexplosions() { return getCreative(PRIORITY_OFFLINEEXPLOSIONS, ID_OFFLINEEXPLOSIONS, ID_OFFLINEEXPLOSIONS, "Can explosions occur if faction is offline?", "Explosions if faction is offline.", "No explosions if faction is offline.", false, false, true); }
 	public static MFlag getFlagFirespread() { return getCreative(PRIORITY_FIRESPREAD, ID_FIRESPREAD, ID_FIRESPREAD, "Can fire spread in territory?", "Fire can spread in this territory.", "Fire can NOT spread in this territory.", true, false, true); }
 	public static MFlag getFlagEndergrief() { return getCreative(PRIORITY_ENDERGRIEF, ID_ENDERGRIEF, ID_ENDERGRIEF, "Can endermen grief in this territory?", "Endermen can grief in this territory.", "Endermen can NOT grief in this territory.", false, false, true); }
+	public static MFlag getFlagZombiegrief() { return getCreative(PRIORITY_ZOMBIEGRIEF, ID_ZOMBIEGRIEF, ID_ZOMBIEGRIEF, "Can zombies break doors in this territory?", "Zombies can break doors in this territory.", "Zombies can NOT break doors in this territory.", false, false, true); }
 	public static MFlag getFlagPermanent() { return getCreative(PRIORITY_PERMANENT, ID_PERMANENT, ID_PERMANENT, "Is the faction immune to deletion?", "The faction can NOT be deleted.", "The faction can be deleted.", false, false, true); }
 	public static MFlag getFlagPeaceful() { return getCreative(PRIORITY_PEACEFUL, ID_PEACEFUL, ID_PEACEFUL, "Is the faction in truce with everyone?", "The faction is in truce with everyone.", "The faction relations work as usual.", false, false, true); }
 	public static MFlag getFlagInfpower() { return getCreative(PRIORITY_INFPOWER, ID_INFPOWER, ID_INFPOWER, "Does the faction have infinite power?", "The faction has infinite power.", "The faction power works as usual.", false, false, true); }
@@ -158,7 +168,7 @@ public class MFlag extends Entity<MFlag> implements Prioritized, Registerable
 	// I just added the name in case anyone feel like renaming their flags for some reason.
 	// Example: "monsters"
 	private String name = "defaultName";
-	public String getName() { return this.name; }
+	@Override public String getName() { return this.name; }
 	public MFlag setName(String name) { this.name = name; this.changed(); return this; }
 	
 	// The flag function described as a question.
@@ -188,7 +198,7 @@ public class MFlag extends Entity<MFlag> implements Prioritized, Registerable
 	
 	// Is this flag editable by players?
 	// With this we mean standard non administrator players.
-	// All flags can be changed using /f admin.
+	// All flags can be changed using /f override.
 	// Example: true (if players want to turn mob spawning on I guess they should be able to)
 	private boolean editable = false;
 	public boolean isEditable() { return this.editable; }
@@ -196,7 +206,7 @@ public class MFlag extends Entity<MFlag> implements Prioritized, Registerable
 	
 	// Is this flag visible to players?
 	// With this we mean standard non administrator players.
-	// All flags can be seen using /f admin.
+	// All flags can be seen using /f override.
 	// Some flags can be rendered meaningless by settings in Factions or external plugins.
 	// Say we set "editable" to false and "standard" to true for the "open" flag to force all factions being open.
 	// In such case we might want to hide the open flag by setting "visible" false.
@@ -240,62 +250,51 @@ public class MFlag extends Entity<MFlag> implements Prioritized, Registerable
 	
 	public String getStateDesc(boolean value, boolean withValue, boolean monospaceValue, boolean withName, boolean withDesc, boolean specificDesc)
 	{
-		List<String> parts = new MassiveList<String>();
+		// Create
+		List<String> ret = new MassiveList<>();
 		
-		if (withValue)
-		{
-			if (monospaceValue)
-			{
-				parts.add(Txt.parse(value ? "<g>YES" : "<b>NOO"));
-			}
-			else
-			{
-				parts.add(Txt.parse(value ? "<g>YES" : "<b>NO"));
-			}
-		}
+		// Fill
+		if (withValue) ret.add(getStateValue(value, monospaceValue));
+		if (withName) ret.add(this.getStateName());
+		if (withDesc) ret.add(this.getStateDescription(value, specificDesc));
 		
-		if (withName)
-		{
-			String nameFormat;
-			if ( ! this.isVisible())
-			{
-				nameFormat = "<silver>%s";
-			}
-			else if (this.isEditable())
-			{
-				nameFormat = "<pink>%s";
-			}
-			else
-			{
-				nameFormat = "<aqua>%s";
-			}
-			String name = this.getName();
-			String nameDesc = Txt.parse(nameFormat, name);
-			parts.add(nameDesc);
-		}
-		
-		if (withDesc)
-		{
-			String desc;
-			if (specificDesc)
-			{
-				desc = value ? this.getDescYes() : this.getDescNo();
-			}
-			else
-			{
-				desc = this.getDesc();
-			}
-			String descDesc = Txt.parse("<i>%s", desc);
-			parts.add(descDesc);
-		}
-		
-		return Txt.implode(parts, " ");
+		// Return
+		return Txt.implode(ret, " ");
 	}
 	
-	@Deprecated
-	public String getStateInfo(boolean value, boolean withDesc)
+	private static String getStateValue(boolean value, boolean monoSpace)
 	{
-		return this.getStateDesc(value, true, true, true, true, false);
+		String yes = "<g>YES";
+		String no = monoSpace ? "<b>NOO" : "<b>NO";
+		
+		return Txt.parse(value ? yes : no);
+	}
+	
+	private String getStateName()
+	{
+		return this.getStateColor().toString() + this.getName();
+	}
+	
+	private ChatColor getStateColor()
+	{
+		// Is special?
+		if (!this.isVisible()) return ChatColor.GRAY;
+		if (this.isEditable()) return ChatColor.LIGHT_PURPLE;
+		
+		// Return normal
+		return ChatColor.AQUA;
+	}
+	
+	private String getStateDescription(boolean value, boolean specific)
+	{
+		// Create
+		String desc = this.getDesc();
+		
+		// Is specific?
+		if (specific) desc = value ? this.getDescYes() : this.getDescNo();
+		
+		// Return
+		return Txt.parse("<i>%s", desc);
 	}
 	
 }

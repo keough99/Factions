@@ -1,5 +1,23 @@
 package com.massivecraft.factions.entity;
 
+import com.massivecraft.factions.Factions;
+import com.massivecraft.factions.Rel;
+import com.massivecraft.factions.engine.EngineChat;
+import com.massivecraft.factions.event.EventFactionsChunkChangeType;
+import com.massivecraft.massivecore.collections.BackstringSet;
+import com.massivecraft.massivecore.collections.WorldExceptionSet;
+import com.massivecraft.massivecore.command.editor.annotation.EditorName;
+import com.massivecraft.massivecore.command.editor.annotation.EditorType;
+import com.massivecraft.massivecore.command.editor.annotation.EditorTypeInner;
+import com.massivecraft.massivecore.command.type.TypeMillisDiff;
+import com.massivecraft.massivecore.store.Entity;
+import com.massivecraft.massivecore.util.MUtil;
+import com.massivecraft.massivecore.util.TimeUnit;
+import org.bukkit.ChatColor;
+import org.bukkit.Material;
+import org.bukkit.entity.EntityType;
+import org.bukkit.event.EventPriority;
+
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.LinkedHashSet;
@@ -7,21 +25,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-import org.bukkit.ChatColor;
-import org.bukkit.Material;
-import org.bukkit.entity.EntityType;
-import org.bukkit.event.EventPriority;
-
-import com.massivecraft.factions.Factions;
-import com.massivecraft.factions.Rel;
-import com.massivecraft.factions.engine.EngineChat;
-import com.massivecraft.factions.event.EventFactionsChunkChangeType;
-import com.massivecraft.massivecore.collections.BackstringEnumSet;
-import com.massivecraft.massivecore.collections.WorldExceptionSet;
-import com.massivecraft.massivecore.store.Entity;
-import com.massivecraft.massivecore.util.MUtil;
-import com.massivecraft.massivecore.util.TimeUnit;
-
+@EditorName("config")
 public class MConf extends Entity<MConf>
 {
 	// -------------------------------------------- //
@@ -40,13 +44,23 @@ public class MConf extends Entity<MConf>
 	{
 		super.load(that);
 		
-		if (!Factions.get().isDatabaseInitialized()) return this;
-		
-		EngineChat.get().deactivate();
-		EngineChat.get().activate();
+		// Reactivate EngineChat if currently active.
+		// This way some event listeners are registered with the correct priority based on the config.
+		EngineChat engine = EngineChat.get();
+		if (engine.isActive())
+		{
+			engine.setActive(false);
+			engine.setActive(true);
+		}
 		
 		return this;
 	}
+	
+	// -------------------------------------------- //
+	// VERSION
+	// -------------------------------------------- //
+	
+	public int version = 1;
 	
 	// -------------------------------------------- //
 	// COMMAND ALIASES
@@ -64,6 +78,8 @@ public class MConf extends Entity<MConf>
 	// In such case set standard to false and add "Hurr" as an exeption to worldsClaimingEnabled.
 	public WorldExceptionSet worldsClaimingEnabled = new WorldExceptionSet();
 	public WorldExceptionSet worldsPowerLossEnabled = new WorldExceptionSet();
+	public WorldExceptionSet worldsPowerGainEnabled = new WorldExceptionSet();
+	
 	public WorldExceptionSet worldsPvpRulesEnabled = new WorldExceptionSet();
 	
 	// -------------------------------------------- //
@@ -73,7 +89,7 @@ public class MConf extends Entity<MConf>
 	// Add player names here who should bypass all protections.
 	// Should /not/ be used for admins. There is "/f adminmode" for that.
 	// This is for other plugins/mods that use a fake player to take actions, which shouldn't be subject to our protections.
-	public Set<String> playersWhoBypassAllProtection = new LinkedHashSet<String>();
+	public Set<String> playersWhoBypassAllProtection = new LinkedHashSet<>();
 	
 	// -------------------------------------------- //
 	// TASKS
@@ -94,31 +110,21 @@ public class MConf extends Entity<MConf>
 	// After how many milliseconds should players be automatically kicked from their faction?
 	
 	// The Default
+	@EditorType(TypeMillisDiff.class)
 	public long removePlayerMillisDefault = 10 * TimeUnit.MILLIS_PER_DAY; // 10 days
 	
 	// Player Age Bonus
+	@EditorTypeInner({TypeMillisDiff.class, TypeMillisDiff.class})
 	public Map<Long, Long> removePlayerMillisPlayerAgeToBonus = MUtil.map(
 		2 * TimeUnit.MILLIS_PER_WEEK, 10 * TimeUnit.MILLIS_PER_DAY  // +10 days after 2 weeks
 	);
 	
 	// Faction Age Bonus
+	@EditorTypeInner({TypeMillisDiff.class, TypeMillisDiff.class})
 	public Map<Long, Long> removePlayerMillisFactionAgeToBonus = MUtil.map(
 		4 * TimeUnit.MILLIS_PER_WEEK, 10 * TimeUnit.MILLIS_PER_DAY, // +10 days after 4 weeks
 		2 * TimeUnit.MILLIS_PER_WEEK,  5 * TimeUnit.MILLIS_PER_DAY  // +5 days after 2 weeks
 	);
-	
-	// -------------------------------------------- //
-	// SPECIAL FACTION IDS
-	// -------------------------------------------- //
-	// These are a deprecated remnant from the universe system.
-	// We needed these to understand the difference between wilderness in different universes.
-	// Now that we are back to one universe only, we can have static names like simply "none", "safezone" and "warzone".
-	// Previously we set them to UUID.randomUUID().toString() but now we set them to null.
-	// If the value is set we use it to update map entries and then set it to null really quick.
-	
-	public String factionIdNone = null;
-	public String factionIdSafezone = null;
-	public String factionIdWarzone = null;
 	
 	// -------------------------------------------- //
 	// DEFAULTS
@@ -146,7 +152,7 @@ public class MConf extends Entity<MConf>
 	
 	// How many ticks should we delay the faction message of the day with?
 	// -1 means we don't delay at all. We display it at once.
-	// 0 means it's deferred to the upcomming server tick.
+	// 0 means it's deferred to the upcoming server tick.
 	// 5 means we delay it yet another 5 ticks.
 	public int motdDelayTicks = -1;
 
@@ -235,6 +241,15 @@ public class MConf extends Entity<MConf>
 	// 0 means there isn't.
 	public int claimedLandsMax = 0;
 	
+	// The max amount of worlds in which a player can have claims in.
+	public int claimedWorldsMax = -1;
+	
+	// -------------------------------------------- //
+	// PROTECTION
+	// -------------------------------------------- //
+	
+	public boolean protectionLiquidFlowEnabled = true;
+	
 	// -------------------------------------------- //
 	// HOMES
 	// -------------------------------------------- //
@@ -296,6 +311,10 @@ public class MConf extends Entity<MConf>
 	// It works in both directions. Meaning you must join a faction to hurt players and get hurt by players.
 	public boolean disablePVPForFactionlessPlayers = false;
 	
+	// If you set this option to true then factionless players cant damage each other.
+	// So two factionless can't PvP, but they can PvP with others if that is allowed.
+	public boolean enablePVPBetweenFactionlessPlayers = true;
+	
 	// Set this option to true to create an exception to the rule above.
 	// Players inside their own faction territory can then hurt facitonless players.
 	// This way you may "evict" factionless trolls messing around in your home base.
@@ -315,7 +334,7 @@ public class MConf extends Entity<MConf>
 	
 	// A list of commands to block for members of permanent factions.
 	// I don't really understand the user case for this option.
-	public List<String> denyCommandsPermanentFactionMember = new ArrayList<String>();
+	public List<String> denyCommandsPermanentFactionMember = new ArrayList<>();
 
 	// Lists of commands to deny depending on your relation to the current faction territory.
 	// You may for example not type /home (might be the plugin Essentials) in the territory of your enemies.
@@ -380,6 +399,26 @@ public class MConf extends Entity<MConf>
 		Rel.MEMBER, new ArrayList<String>()
 	);
 	
+	// The distance for denying the following commands. Set to -1 to disable.
+	public double denyCommandsDistance = -1;
+	
+	// Lists of commands to deny depending on your relation to a nearby enemy in the above distance.
+	public Map<Rel, List<String>> denyCommandsDistanceRelation = MUtil.map(
+		Rel.ENEMY, MUtil.list(
+			"home"
+		),
+		Rel.NEUTRAL, new ArrayList<String>(),
+		Rel.TRUCE, new ArrayList<String>(),
+		Rel.ALLY, new ArrayList<String>(),
+		Rel.MEMBER, new ArrayList<String>()
+	);
+	
+	// Allow bypassing the above setting when in these territories.
+	public List<Rel> denyCommandsDistanceBypassIn = MUtil.list(
+		Rel.MEMBER,
+		Rel.ALLY
+	);
+	
 	// -------------------------------------------- //
 	// CHAT
 	// -------------------------------------------- //
@@ -441,6 +480,7 @@ public class MConf extends Entity<MConf>
 	public boolean handleExploitObsidianGenerators = true;
 	public boolean handleExploitEnderPearlClipping = true;
 	public boolean handleExploitTNTWaterlog = false;
+	public boolean handleNetherPortalTrap = true;
 	
 	// -------------------------------------------- //
 	// SEE CHUNK
@@ -456,6 +496,7 @@ public class MConf extends Entity<MConf>
 	public int seeChunkKeepEvery = 5;
 	public int seeChunkSkipEvery = 0;
 	
+	@EditorType(TypeMillisDiff.class)
 	public long seeChunkPeriodMillis = 500;
 	public int seeChunkParticleAmount = 30;
 	public float seeChunkParticleOffsetY = 2;
@@ -480,134 +521,44 @@ public class MConf extends Entity<MConf>
 	public boolean logFactionKick = true;
 	public boolean logFactionLeave = true;
 	public boolean logLandClaims = true;
-	public boolean logLandUnclaims = true;
 	public boolean logMoneyTransactions = true;
-	public boolean logPlayerCommands = true;
 	
 	// -------------------------------------------- //
 	// ENUMERATIONS
 	// -------------------------------------------- //
-	
-	// These values are fine for most standard bukkit/spigot servers.
-	// If you however are using Forge with mods that add new container types you might want to add them here.
+	// In this configuration section you can add support for Forge mods that add new Materials and EntityTypes.
 	// This way they can be protected in Faction territory.
+	// Use the "UPPER_CASE_NAME" for the Material or EntityType in question.
+	// If you are running a regular Spigot server you don't have to edit this section.
+	// In fact all of these sets can be empty on regular Spigot servers without any risk.
 	
 	// Interacting with these materials when they are already placed in the terrain results in an edit.
-	public BackstringEnumSet<Material> materialsEditOnInteract = new BackstringEnumSet<Material>(Material.class,
-		"DIODE_BLOCK_OFF", // Minecraft 1.?
-		"DIODE_BLOCK_ON", // Minecraft 1.?
-		"NOTE_BLOCK", // Minecraft 1.?
-		"CAULDRON", // Minecraft 1.?
-		"SOIL" // Minecraft 1.?
-	);
+	public BackstringSet<Material> materialsEditOnInteract = new BackstringSet<>(Material.class);
 	
 	// Interacting with the the terrain holding this item in hand results in an edit.
 	// There's no need to add all block materials here. Only special items other than blocks.
-	public BackstringEnumSet<Material> materialsEditTools = new BackstringEnumSet<Material>(Material.class,
-		"FIREBALL", // Minecraft 1.?
-		"FLINT_AND_STEEL", // Minecraft 1.?
-		"BUCKET", // Minecraft 1.?
-		"WATER_BUCKET", // Minecraft 1.?
-		"LAVA_BUCKET", // Minecraft 1.?
-		"ARMOR_STAND" // Minecraft 1.8
-	);
-	
-	// The duplication bug found in Spigot 1.8 protocol patch
-	// https://github.com/MassiveCraft/Factions/issues/693
-	public BackstringEnumSet<Material> materialsEditToolsDupeBug = new BackstringEnumSet<Material>(Material.class,
-		"CHEST", // Minecraft 1.?
-		"SIGN_POST", // Minecraft 1.?
-		"TRAPPED_CHEST", // Minecraft 1.?
-		"SIGN", // Minecraft 1.?
-		"WOOD_DOOR", // Minecraft 1.?
-		"IRON_DOOR" // Minecraft 1.?
-	);
+	public BackstringSet<Material> materialsEditTools = new BackstringSet<>(Material.class);
 	
 	// Interacting with these materials placed in the terrain results in door toggling.
-	public BackstringEnumSet<Material> materialsDoor = new BackstringEnumSet<Material>(Material.class,
-		"WOODEN_DOOR", // Minecraft 1.?
-		"ACACIA_DOOR", // Minecraft 1.8
-		"BIRCH_DOOR", // Minecraft 1.8
-		"DARK_OAK_DOOR", // Minecraft 1.8
-		"JUNGLE_DOOR", // Minecraft 1.8
-		"SPRUCE_DOOR", // Minecraft 1.8
-		"TRAP_DOOR", // Minecraft 1.?
-		"FENCE_GATE", // Minecraft 1.?
-		"ACACIA_FENCE_GATE", // Minecraft 1.8
-		"BIRCH_FENCE_GATE", // Minecraft 1.8
-		"DARK_OAK_FENCE_GATE", // Minecraft 1.8
-		"JUNGLE_FENCE_GATE", // Minecraft 1.8
-		"SPRUCE_FENCE_GATE" // Minecraft 1.8
-	);
+	public BackstringSet<Material> materialsDoor = new BackstringSet<>(Material.class);
 	
 	// Interacting with these materials placed in the terrain results in opening a container.
-	public BackstringEnumSet<Material> materialsContainer = new BackstringEnumSet<Material>(Material.class,
-		"DISPENSER", // Minecraft 1.?
-		"CHEST", // Minecraft 1.?
-		"FURNACE", // Minecraft 1.?
-		"BURNING_FURNACE", // Minecraft 1.?
-		"JUKEBOX", // Minecraft 1.?
-		"BREWING_STAND", // Minecraft 1.?
-		"ENCHANTMENT_TABLE", // Minecraft 1.?
-		"ANVIL", // Minecraft 1.?
-		"BEACON", // Minecraft 1.?
-		"TRAPPED_CHEST", // Minecraft 1.?
-		"HOPPER", // Minecraft 1.?
-		"DROPPER" // Minecraft 1.?
-	);
+	public BackstringSet<Material> materialsContainer = new BackstringSet<>(Material.class);
 	
 	// Interacting with these entities results in an edit.
-	public BackstringEnumSet<EntityType> entityTypesEditOnInteract = new BackstringEnumSet<EntityType>(EntityType.class,
-		"ITEM_FRAME", // Minecraft 1.?
-		"ARMOR_STAND" // Minecraft 1.8
-	);
+	public BackstringSet<EntityType> entityTypesEditOnInteract = new BackstringSet<>(EntityType.class);
 	
 	// Damaging these entities results in an edit.
-	public BackstringEnumSet<EntityType> entityTypesEditOnDamage = new BackstringEnumSet<EntityType>(EntityType.class,
-		"ITEM_FRAME", // Minecraft 1.?
-		"ARMOR_STAND" // Minecraft 1.8
-	);
+	public BackstringSet<EntityType> entityTypesEditOnDamage = new BackstringSet<>(EntityType.class);
 	
 	// Interacting with these entities results in opening a container.
-	public BackstringEnumSet<EntityType> entityTypesContainer = new BackstringEnumSet<EntityType>(EntityType.class,
-		"MINECART_CHEST", // Minecraft 1.?
-		"MINECART_HOPPER" // Minecraft 1.?
-	);
+	public BackstringSet<EntityType> entityTypesContainer = new BackstringSet<>(EntityType.class);
 	
 	// The complete list of entities considered to be monsters.
-	public BackstringEnumSet<EntityType> entityTypesMonsters = new BackstringEnumSet<EntityType>(EntityType.class,
-		"BLAZE", // Minecraft 1.?
-		"CAVE_SPIDER", // Minecraft 1.?
-		"CREEPER", // Minecraft 1.?
-		"ENDERMAN", // Minecraft 1.?
-		"ENDERMITE", // Minecraft 1.8
-		"ENDER_DRAGON", // Minecraft 1.?
-		"GUARDIAN", // Minecraft 1.8
-		"GHAST", // Minecraft 1.?
-		"GIANT", // Minecraft 1.?
-		"MAGMA_CUBE", // Minecraft 1.?
-		"PIG_ZOMBIE", // Minecraft 1.?
-		"SILVERFISH", // Minecraft 1.?
-		"SKELETON", // Minecraft 1.?
-		"SLIME", // Minecraft 1.?
-		"SPIDER", // Minecraft 1.?
-		"WITCH", // Minecraft 1.?
-		"WITHER", // Minecraft 1.?
-		"ZOMBIE" // Minecraft 1.?
-	);
+	public BackstringSet<EntityType> entityTypesMonsters = new BackstringSet<>(EntityType.class);
 	
 	// List of entities considered to be animals.
-	public BackstringEnumSet<EntityType> entityTypesAnimals = new BackstringEnumSet<EntityType>(EntityType.class,
-		"CHICKEN", // Minecraft 1.?
-		"COW", // Minecraft 1.?
-		"HORSE", // Minecraft 1.?
-		"MUSHROOM_COW", // Minecraft 1.?
-		"OCELOT", // Minecraft 1.?
-		"PIG", // Minecraft 1.?
-		"RABBIT", // Minecraft 1.?
-		"SHEEP", // Minecraft 1.?
-		"SQUID" // Minecraft 1.?
-	);
+	public BackstringSet<EntityType> entityTypesAnimals = new BackstringSet<>(EntityType.class);
 	
 	// -------------------------------------------- //
 	// INTEGRATION: HeroChat
@@ -629,7 +580,7 @@ public class MConf extends Entity<MConf>
 	public boolean herochatFactionIsShortcutAllowed = false;
 	public boolean herochatFactionCrossWorld = true;
 	public boolean herochatFactionMuted = false;
-	public Set<String> herochatFactionWorlds = new HashSet<String>();
+	public Set<String> herochatFactionWorlds = new HashSet<>();
 	
 	// The Allies Channel
 	public String herochatAlliesName = "Allies";
@@ -640,7 +591,7 @@ public class MConf extends Entity<MConf>
 	public boolean herochatAlliesIsShortcutAllowed = false;
 	public boolean herochatAlliesCrossWorld = true;
 	public boolean herochatAlliesMuted = false;
-	public Set<String> herochatAlliesWorlds = new HashSet<String>();
+	public Set<String> herochatAlliesWorlds = new HashSet<>();
 	
 	// -------------------------------------------- //
 	// INTEGRATION: LWC
@@ -729,6 +680,5 @@ public class MConf extends Entity<MConf>
 	// That costs should the faciton bank take care of?
 	// If you set this to false the player executing the command will pay instead.
 	public boolean bankFactionPaysCosts = true;
-	public boolean bankFactionPaysLandCosts = true;
 
 }

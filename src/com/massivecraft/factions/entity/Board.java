@@ -1,17 +1,5 @@
 package com.massivecraft.factions.entity;
 
-import java.lang.reflect.Type;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.Map;
-import java.util.Map.Entry;
-import java.util.Set;
-import java.util.concurrent.ConcurrentSkipListMap;
-
-import org.bukkit.ChatColor;
-
 import com.massivecraft.factions.Const;
 import com.massivecraft.factions.Factions;
 import com.massivecraft.factions.RelationParticipator;
@@ -23,6 +11,17 @@ import com.massivecraft.massivecore.ps.PS;
 import com.massivecraft.massivecore.store.Entity;
 import com.massivecraft.massivecore.util.Txt;
 import com.massivecraft.massivecore.xlib.gson.reflect.TypeToken;
+
+import java.lang.reflect.Type;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Map.Entry;
+import java.util.Set;
+import java.util.concurrent.ConcurrentSkipListMap;
 
 public class Board extends Entity<Board> implements BoardInterface
 {
@@ -65,6 +64,7 @@ public class Board extends Entity<Board> implements BoardInterface
 	
 	private ConcurrentSkipListMap<PS, TerritoryAccess> map;
 	public Map<PS, TerritoryAccess> getMap() { return Collections.unmodifiableMap(this.map); }
+	public Map<PS, TerritoryAccess> getMapRaw() { return this.map; }
 	
 	// -------------------------------------------- //
 	// CONSTRUCT
@@ -72,12 +72,12 @@ public class Board extends Entity<Board> implements BoardInterface
 	
 	public Board()
 	{
-		this.map = new ConcurrentSkipListMap<PS, TerritoryAccess>();
+		this.map = new ConcurrentSkipListMap<>();
 	}
 	
 	public Board(Map<PS, TerritoryAccess> map)
 	{
-		this.map = new ConcurrentSkipListMap<PS, TerritoryAccess>(map);
+		this.map = new ConcurrentSkipListMap<>(map);
 	}
 	
 	// -------------------------------------------- //
@@ -92,7 +92,7 @@ public class Board extends Entity<Board> implements BoardInterface
 		if (ps == null) return null;
 		ps = ps.getChunkCoords(true);
 		TerritoryAccess ret = this.map.get(ps);
-		if (ret == null) ret = TerritoryAccess.valueOf(Factions.ID_NONE);
+		if (ret == null || ret.getHostFaction() == null) ret = TerritoryAccess.valueOf(Factions.ID_NONE);
 		return ret;
 	}
 	
@@ -157,24 +157,6 @@ public class Board extends Entity<Board> implements BoardInterface
 		}
 	}
 	
-	// Removes orphaned foreign keys
-	@Override
-	public void clean()
-	{
-		for (Entry<PS, TerritoryAccess> entry : this.map.entrySet())
-		{
-			TerritoryAccess territoryAccess = entry.getValue();
-			String factionId = territoryAccess.getHostFactionId();
-			
-			if (FactionColl.get().containsId(factionId)) continue;
-			
-			PS ps = entry.getKey();
-			this.removeAt(ps);
-			
-			Factions.get().log("Board cleaner removed "+factionId+" from "+ps);
-		}
-	}
-	
 	// CHUNKS
 	
 	@Override
@@ -186,7 +168,7 @@ public class Board extends Entity<Board> implements BoardInterface
 	@Override
 	public Set<PS> getChunks(String factionId)
 	{
-		Set<PS> ret = new HashSet<PS>();
+		Set<PS> ret = new HashSet<>();
 		for (Entry<PS, TerritoryAccess> entry : this.map.entrySet())
 		{
 			TerritoryAccess ta = entry.getValue();
@@ -202,7 +184,7 @@ public class Board extends Entity<Board> implements BoardInterface
 	@Override
 	public Map<Faction, Set<PS>> getFactionToChunks()
 	{
-		Map<Faction, Set<PS>> ret = new MassiveMap<Faction, Set<PS>>();
+		Map<Faction, Set<PS>> ret = new MassiveMap<>();
 		
 		for (Entry<PS, TerritoryAccess> entry : this.map.entrySet())
 		{
@@ -215,7 +197,7 @@ public class Board extends Entity<Board> implements BoardInterface
 			Set<PS> chunks = ret.get(faction);
 			if (chunks == null)
 			{
-				chunks = new MassiveSet<PS>();
+				chunks = new MassiveSet<>();
 				ret.put(faction, chunks);
 			}
 			
@@ -251,7 +233,7 @@ public class Board extends Entity<Board> implements BoardInterface
 	@Override
 	public Map<Faction, Integer> getFactionToCount()
 	{
-		Map<Faction, Integer> ret = new MassiveMap<Faction, Integer>();
+		Map<Faction, Integer> ret = new MassiveMap<>();
 		
 		for (Entry<PS, TerritoryAccess> entry : this.map.entrySet())
 		{
@@ -272,6 +254,25 @@ public class Board extends Entity<Board> implements BoardInterface
 		}
 		
 		return ret;
+	}
+	
+	// CLAIMED
+	
+	@Override
+	public boolean hasClaimed(Faction faction)
+	{
+		return this.hasClaimed(faction.getId());
+	}
+	
+	@Override
+	public boolean hasClaimed(String factionId)
+	{
+		for (TerritoryAccess ta : this.map.values())
+		{
+			if ( ! ta.getHostFactionId().equals(factionId)) continue;
+			return true;
+		}
+		return false;
 	}
 	
 	// NEARBY DETECTION
@@ -300,7 +301,7 @@ public class Board extends Entity<Board> implements BoardInterface
 		
 		return false;
 	}
-	
+
 	@Override
 	public boolean isAnyBorderPs(Set<PS> pss)
 	{
@@ -347,14 +348,14 @@ public class Board extends Entity<Board> implements BoardInterface
 	// MAP GENERATION
 	
 	@Override
-	public ArrayList<String> getMap(RelationParticipator observer, PS centerPs, double inDegrees, int width, int height)
+	public List<Object> getMap(RelationParticipator observer, PS centerPs, double inDegrees, int width, int height)
 	{
 		centerPs = centerPs.getChunkCoords(true);
 		
-		ArrayList<String> ret = new ArrayList<String>();
+		List<Object> ret = new ArrayList<>();
 		Faction centerFaction = this.getFactionAt(centerPs);
 		
-		ret.add(Txt.titleize("("+centerPs.getChunkX() + "," + centerPs.getChunkZ()+") "+centerFaction.getName(observer)));
+		ret.add(Txt.titleize("(" + centerPs.getChunkX() + "," + centerPs.getChunkZ() + ") " + centerFaction.getName(observer)));
 		
 		int halfWidth = width / 2;
 		int halfHeight = height / 2;
@@ -363,55 +364,66 @@ public class Board extends Entity<Board> implements BoardInterface
 		
 		PS topLeftPs = centerPs.plusChunkCoords(-halfWidth, -halfHeight);
 		
+		// Get the compass
+		List<String> asciiCompass = AsciiCompass.getAsciiCompass(inDegrees);
+		
 		// Make room for the list of names
 		height--;
 		
-		Map<Faction, Character> fList = new HashMap<Faction, Character>();
+		Map<Faction, Character> fList = new HashMap<>();
 		int chrIdx = 0;
+		boolean overflown = false;
 		
 		// For each row
 		for (int dz = 0; dz < height; dz++)
 		{
 			// Draw and add that row
-			String row = "";
+			StringBuilder row = new StringBuilder();
 			for (int dx = 0; dx < width; dx++)
 			{
-				if(dx == halfWidth && dz == halfHeight)
+				if (dx == halfWidth && dz == halfHeight)
 				{
-					row += ChatColor.AQUA+"+";
+					row.append(Const.MAP_KEY_SEPARATOR);
 					continue;
 				}
-			
+
+				if ( ! overflown && chrIdx >= Const.MAP_KEY_CHARS.length) overflown = true;
+
 				PS herePs = topLeftPs.plusChunkCoords(dx, dz);
 				Faction hereFaction = this.getFactionAt(herePs);
+				boolean contains = fList.containsKey(hereFaction);
 				if (hereFaction.isNone())
 				{
-					row += ChatColor.GRAY+"-";
+					row.append(Const.MAP_KEY_WILDERNESS);
+				}
+				else if ( ! contains && overflown)
+				{
+					row.append(Const.MAP_KEY_OVERFLOW);
 				}
 				else
 				{
-					if (!fList.containsKey(hereFaction))
-						fList.put(hereFaction, Const.MAP_KEY_CHARS[chrIdx++]);
+					if ( ! contains) fList.put(hereFaction, Const.MAP_KEY_CHARS[chrIdx++]);
 					char fchar = fList.get(hereFaction);
-					row += hereFaction.getColorTo(observer) + "" + fchar;
+					row.append(hereFaction.getColorTo(observer).toString()).append(fchar);
 				}
 			}
-			ret.add(row);
+			
+			String line = row.toString();
+			
+			// Add the compass
+			if (dz == 0) line = asciiCompass.get(0) + line.substring(3*3);
+			if (dz == 1) line = asciiCompass.get(1) + line.substring(3*3);
+			if (dz == 2) line = asciiCompass.get(2) + line.substring(3*3);
+			
+			ret.add(line);
 		}
-		
-		// Get the compass
-		ArrayList<String> asciiCompass = AsciiCompass.getAsciiCompass(inDegrees, ChatColor.RED, Txt.parse("<a>"));
-
-		// Add the compass
-		ret.set(1, asciiCompass.get(0)+ret.get(1).substring(3*3));
-		ret.set(2, asciiCompass.get(1)+ret.get(2).substring(3*3));
-		ret.set(3, asciiCompass.get(2)+ret.get(3).substring(3*3));
 			
 		String fRow = "";
 		for (Faction keyfaction : fList.keySet())
 		{
-			fRow += ""+keyfaction.getColorTo(observer) + fList.get(keyfaction) + ": " + keyfaction.getName() + " ";
+			fRow += keyfaction.getColorTo(observer).toString() + fList.get(keyfaction) + ": " + keyfaction.getName() + " ";
 		}
+		if (overflown) fRow += Const.MAP_OVERFLOW_MESSAGE;
 		fRow = fRow.trim();
 		ret.add(fRow);
 		

@@ -1,24 +1,59 @@
 package com.massivecraft.factions;
 
+import com.massivecraft.factions.entity.MConf;
+import com.massivecraft.massivecore.Colorized;
+import com.massivecraft.massivecore.Named;
+import com.massivecraft.massivecore.collections.MassiveSet;
 import org.bukkit.ChatColor;
 
-import com.massivecraft.factions.entity.MConf;
+import java.util.Collections;
+import java.util.Set;
 
-
-public enum Rel
+public enum Rel implements Colorized, Named
 {
 	// -------------------------------------------- //
 	// ENUM
 	// -------------------------------------------- //
 	
-	LEADER (70, true, "your faction leader", "your faction leader", "", ""),
-	OFFICER (60, true, "an officer in your faction", "officers in your faction", "", ""),
-	MEMBER (50, true, "a member in your faction", "members in your faction", "your faction", "your factions"),
-	RECRUIT (45, true, "a recruit in your faction", "recruits in your faction", "", ""),
-	ALLY (40, true, "an ally", "allies", "an allied faction", "allied factions"),
-	TRUCE (30, true, "someone in truce with you", "those in truce with you", "a faction in truce", "factions in truce"),
-	NEUTRAL (20, false, "someone neutral to you", "those neutral to you", "a neutral faction", "neutral factions"),
-	ENEMY (10, false, "an enemy", "enemies", "an enemy faction", "enemy factions"),
+	ENEMY(
+		"an enemy", "enemies", "an enemy faction", "enemy factions",
+		"Enemy"
+	) { @Override public ChatColor getColor() { return MConf.get().colorEnemy; } },
+	
+	NEUTRAL(
+		"someone neutral to you", "those neutral to you", "a neutral faction", "neutral factions",
+		"Neutral"
+	) { @Override public ChatColor getColor() { return MConf.get().colorNeutral; } },
+	
+	TRUCE(
+		"someone in truce with you", "those in truce with you", "a faction in truce", "factions in truce",
+		"Truce"
+	) { @Override public ChatColor getColor() { return MConf.get().colorTruce; } },
+	
+	ALLY(
+		"an ally", "allies", "an allied faction", "allied factions",
+		"Ally"
+	) { @Override public ChatColor getColor() { return MConf.get().colorAlly; } },
+	
+	RECRUIT(
+		"a recruit in your faction", "recruits in your faction", "", "",
+		"Recruit"
+	) { @Override public String getPrefix() { return MConf.get().prefixRecruit; } },
+	
+	MEMBER(
+		"a member in your faction", "members in your faction", "your faction", "your factions",
+		"Member"
+	) { @Override public String getPrefix() { return MConf.get().prefixMember; } },
+	
+	OFFICER(
+		"an officer in your faction", "officers in your faction", "", "",
+		"Officer", "Moderator"
+	) { @Override public String getPrefix() { return MConf.get().prefixOfficer; } },
+	
+	LEADER(
+		"your faction leader", "your faction leader", "", "",
+		"Leader", "Admin", "Owner"
+	) { @Override public String getPrefix() { return MConf.get().prefixLeader; } },
 	
 	// END OF LIST
 	;
@@ -27,13 +62,7 @@ public enum Rel
 	// FIELDS
 	// -------------------------------------------- //
 	
-	// TODO: Are not enums sorted without this?
-	private final int value;
-	public int getValue() { return this.value; }
-	
-	// Used for friendly fire.
-	private final boolean friend;
-	public boolean isFriend() { return this.friend; }
+	public int getValue() { return this.ordinal(); }
 	
 	private final String descPlayerOne;
 	public String getDescPlayerOne() { return this.descPlayerOne; }
@@ -47,73 +76,55 @@ public enum Rel
 	private final String descFactionMany;
 	public String getDescFactionMany() { return this.descFactionMany; }
 	
+	private final Set<String> names;
+	public Set<String> getNames() { return this.names; }
+	@Override public String getName() { return this.getNames().iterator().next(); }
+	
 	// -------------------------------------------- //
 	// CONSTRUCT
 	// -------------------------------------------- //
 	
-	private Rel(final int value, final boolean friend, final String descPlayerOne, final String descPlayerMany, final String descFactionOne, final String descFactionMany)
+	Rel(String descPlayerOne, String descPlayerMany, String descFactionOne, String descFactionMany, String... names)
 	{
-		this.value = value;
-		this.friend = friend;
 		this.descPlayerOne = descPlayerOne;
 		this.descPlayerMany = descPlayerMany;
 		this.descFactionOne = descFactionOne;
 		this.descFactionMany = descFactionMany;
+		this.names = Collections.unmodifiableSet(new MassiveSet<>(names));
+	}
+	
+	// -------------------------------------------- //
+	// OVERRIDE
+	// -------------------------------------------- //
+	
+	@Override
+	public ChatColor getColor()
+	{
+		return MConf.get().colorMember;
 	}
 	
 	// -------------------------------------------- //
 	// UTIL
 	// -------------------------------------------- //
 	
-	public static Rel parse(String str)
-	{
-		if (str == null || str.length() < 1) return null;
-		
-		str = str.toLowerCase();
-		
-		// These are to allow conversion from the old system.
-		if (str.equals("admin"))
-		{
-			return LEADER;
-		}
-		
-		if (str.equals("moderator"))
-		{
-			return OFFICER;
-		}
-		
-		if (str.equals("normal"))
-		{
-			return MEMBER;
-		}
-		
-		// NOTE: This assumes the first char is different for all.
-		for (Rel rel : values())
-		{
-			String relStr = rel.toString().toLowerCase();
-			if (relStr.startsWith(str)) return rel;
-		}
-		return null;
-	}
-	
 	public boolean isAtLeast(Rel rel)
 	{
-		return this.value >= rel.value;
+		return this.getValue() >= rel.getValue();
 	}
 	
 	public boolean isAtMost(Rel rel)
 	{
-		return this.value <= rel.value;
+		return this.getValue() <= rel.getValue();
 	}
 	
 	public boolean isLessThan(Rel rel)
 	{
-		return this.value < rel.value;
+		return this.getValue() < rel.getValue();
 	}
 	
 	public boolean isMoreThan(Rel rel)
 	{
-		return this.value > rel.value;
+		return this.getValue() > rel.getValue();
 	}
 	
 	public boolean isRank()
@@ -121,42 +132,14 @@ public enum Rel
 		return this.isAtLeast(Rel.RECRUIT);
 	}
 	
-	public ChatColor getColor()
+	// Used for friendly fire.
+	public boolean isFriend()
 	{
-		if (this.isAtLeast(RECRUIT))
-			return MConf.get().colorMember;
-		else if (this == ALLY)
-			return MConf.get().colorAlly;
-		else if (this == NEUTRAL)
-			return MConf.get().colorNeutral;
-		else if (this == TRUCE)
-			return MConf.get().colorTruce;
-		else
-			return MConf.get().colorEnemy;
+		return this.isAtLeast(TRUCE);
 	}
 	
 	public String getPrefix()
 	{
-		if (this == LEADER)
-		{
-			return MConf.get().prefixLeader;
-		} 
-		
-		if (this == OFFICER)
-		{
-			return MConf.get().prefixOfficer;
-		}
-		
-		if (this == MEMBER)
-		{
-			return MConf.get().prefixMember;
-		}
-		
-		if (this == RECRUIT)
-		{
-			return MConf.get().prefixRecruit;
-		}
-		
 		return "";
 	}
 	

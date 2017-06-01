@@ -1,13 +1,13 @@
 package com.massivecraft.factions.cmd;
 
-import java.util.LinkedHashSet;
-import java.util.Set;
-
 import com.massivecraft.factions.Perm;
 import com.massivecraft.massivecore.MassiveException;
-import com.massivecraft.massivecore.cmd.req.ReqHasPerm;
-import com.massivecraft.massivecore.cmd.req.ReqIsPlayer;
+import com.massivecraft.massivecore.command.requirement.RequirementHasPerm;
+import com.massivecraft.massivecore.command.requirement.RequirementIsPlayer;
 import com.massivecraft.massivecore.ps.PS;
+
+import java.util.LinkedHashSet;
+import java.util.Set;
 
 
 public class CmdFactionsSetCircle extends CmdFactionsSetXRadius
@@ -29,9 +29,9 @@ public class CmdFactionsSetCircle extends CmdFactionsSetXRadius
 		this.setFormatMany("<h>%s<i> %s <h>%d <i>chunks near %s<i> using circle.");
 		
 		// Requirements
-		this.addRequirements(ReqIsPlayer.get());
-		String node = claim ? Perm.CLAIM_CIRCLE.node : Perm.UNCLAIM_CIRCLE.node;
-		this.addRequirements(ReqHasPerm.get(node));
+		this.addRequirements(RequirementIsPlayer.get());
+		Perm perm = claim ? Perm.CLAIM_CIRCLE : Perm.UNCLAIM_CIRCLE;
+		this.addRequirements(RequirementHasPerm.get(perm));
 	}
 
 	// -------------------------------------------- //
@@ -43,13 +43,11 @@ public class CmdFactionsSetCircle extends CmdFactionsSetXRadius
 	{
 		// Common Startup
 		final PS chunk = PS.valueOf(me.getLocation()).getChunk(true);
-		final Set<PS> chunks = new LinkedHashSet<PS>();
+		final Set<PS> chunks = new LinkedHashSet<>();
 		
 		chunks.add(chunk); // The center should come first for pretty messages
 		
 		Integer radiusZero = this.getRadiusZero();
-		if (radiusZero == null) return null;
-		
 		double radiusSquared = radiusZero * radiusZero;
 		
 		for (int dx = -radiusZero; dx <= radiusZero; dx++)

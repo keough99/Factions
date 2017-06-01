@@ -1,12 +1,10 @@
 package com.massivecraft.factions.cmd;
 
-import com.massivecraft.factions.Perm;
 import com.massivecraft.massivecore.MassiveException;
-import com.massivecraft.massivecore.cmd.Visibility;
-import com.massivecraft.massivecore.cmd.req.ReqHasPerm;
-import com.massivecraft.massivecore.cmd.req.ReqTitlesAvailable;
-import com.massivecraft.massivecore.cmd.type.TypeBoolean;
-import com.massivecraft.massivecore.mixin.Mixin;
+import com.massivecraft.massivecore.command.Visibility;
+import com.massivecraft.massivecore.command.requirement.RequirementTitlesAvailable;
+import com.massivecraft.massivecore.command.type.primitive.TypeBooleanOn;
+import com.massivecraft.massivecore.mixin.MixinTitle;
 import com.massivecraft.massivecore.util.Txt;
 
 public class CmdFactionsTerritorytitles extends FactionsCommand
@@ -18,14 +16,13 @@ public class CmdFactionsTerritorytitles extends FactionsCommand
 	public CmdFactionsTerritorytitles()
 	{
 		// Aliases
-		this.addAliases("tt", "territorytitles");
+		this.addAliases("tt");
 
 		// Parameters
-		this.addParameter(TypeBoolean.get(), "on|off", "toggle");
+		this.addParameter(TypeBooleanOn.get(), "on|off", "toggle");
 
 		// Requirements
-		this.addRequirements(ReqHasPerm.get(Perm.TERRITORYTITLES.node));
-		this.addRequirements(ReqTitlesAvailable.get());
+		this.addRequirements(RequirementTitlesAvailable.get());
 	}
 
 	// -------------------------------------------- //
@@ -36,7 +33,7 @@ public class CmdFactionsTerritorytitles extends FactionsCommand
 	public Visibility getVisibility()
 	{
 		// We hide the command if titles aren't available.
-		if ( ! Mixin.isTitlesAvailable()) return Visibility.INVISIBLE;
+		if ( ! MixinTitle.get().isAvailable()) return Visibility.INVISIBLE;
 		return super.getVisibility();
 	}
 	

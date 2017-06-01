@@ -1,19 +1,15 @@
 package com.massivecraft.factions.cmd;
 
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.List;
-
-import com.massivecraft.factions.Perm;
 import com.massivecraft.factions.cmd.type.TypeFaction;
-import com.massivecraft.factions.cmd.type.TypeMFlag;
 import com.massivecraft.factions.entity.Faction;
 import com.massivecraft.factions.entity.MFlag;
 import com.massivecraft.massivecore.MassiveException;
-import com.massivecraft.massivecore.cmd.req.ReqHasPerm;
-import com.massivecraft.massivecore.cmd.type.TypeAll;
-import com.massivecraft.massivecore.cmd.type.TypeSet;
-import com.massivecraft.massivecore.util.Txt;
+import com.massivecraft.massivecore.collections.MassiveList;
+import com.massivecraft.massivecore.command.Parameter;
+import com.massivecraft.massivecore.pager.Pager;
+import com.massivecraft.massivecore.pager.Stringifier;
+
+import java.util.List;
 
 public class CmdFactionsFlagShow extends FactionsCommand
 {
@@ -23,15 +19,9 @@ public class CmdFactionsFlagShow extends FactionsCommand
 	
 	public CmdFactionsFlagShow()
 	{
-		// Aliases
-		this.addAliases("show");
-		
 		// Parameters
 		this.addParameter(TypeFaction.get(), "faction", "you");
-		this.addParameter(TypeAll.get(TypeSet.get(TypeMFlag.get(), false)), "flags", "all", true);
-		
-		// Requirements
-		this.addRequirements(ReqHasPerm.get(Perm.FLAG_SHOW.node));
+		this.addParameter(Parameter.getPage());
 	}
 	
 	// -------------------------------------------- //
@@ -41,20 +31,30 @@ public class CmdFactionsFlagShow extends FactionsCommand
 	@Override
 	public void perform() throws MassiveException
 	{
-		// Arg: Faction
-		Faction faction = this.readArg(msenderFaction);
-		Collection<MFlag> mflags = this.readArg(MFlag.getAll());
+		// Parameters
+		final Faction faction = this.readArg(msenderFaction);
+		int page = this.readArg();
 		
-		// Create messages
-		List<String> messages = new ArrayList<String>();
-		messages.add(Txt.titleize("Flag for " + faction.describeTo(msender, true)));
-		for (MFlag mflag : mflags)
+		// Pager create
+		String title = "Flags for " + faction.describeTo(msender);
+		Pager<MFlag> pager = new Pager<>(this, title, page, MFlag.getAll(), new Stringifier<MFlag>()
 		{
-			messages.add(mflag.getStateDesc(faction.getFlag(mflag), true, true, true, true, true));
-		}
-
-		// Send messages
-		message(messages);
+			@Override
+			public String toString(MFlag mflag, int index)
+			{
+				return mflag.getStateDesc(faction.getFlag(mflag), true, true, true, true, true);
+			}
+		});
+		
+		// Pager args
+		List<String> pagerArgs = new MassiveList<>(
+			faction.getId(),
+			String.valueOf(page)
+		);
+		pager.setArgs(pagerArgs);
+		
+		// Pager message
+		pager.messageAsync();
 	}
 	
 }

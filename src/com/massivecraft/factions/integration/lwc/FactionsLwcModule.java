@@ -1,24 +1,22 @@
 package com.massivecraft.factions.integration.lwc;
 
-import org.bukkit.Location;
-import org.bukkit.Sound;
-import org.bukkit.block.Block;
-import org.bukkit.entity.Player;
-
 import com.griefcraft.lwc.LWC;
 import com.griefcraft.model.Protection;
 import com.griefcraft.scripting.JavaModule;
 import com.griefcraft.scripting.event.LWCProtectionInteractEvent;
 import com.griefcraft.scripting.event.LWCProtectionRegisterEvent;
 import com.massivecraft.factions.Factions;
-import com.massivecraft.factions.engine.EngineMain;
+import com.massivecraft.factions.engine.EnginePermBuild;
 import com.massivecraft.factions.entity.MConf;
 import com.massivecraft.factions.entity.MPlayer;
-import com.massivecraft.massivecore.mixin.Mixin;
+import com.massivecraft.massivecore.SoundEffect;
 import com.massivecraft.massivecore.ps.PS;
 import com.massivecraft.massivecore.util.IdUtil;
 import com.massivecraft.massivecore.util.SmokeUtil;
 import com.massivecraft.massivecore.util.Txt;
+import org.bukkit.Location;
+import org.bukkit.block.Block;
+import org.bukkit.entity.Player;
 
 @SuppressWarnings("unused")
 public class FactionsLwcModule extends JavaModule
@@ -54,7 +52,7 @@ public class FactionsLwcModule extends JavaModule
 		
 		// ... and the player don't have build rights here ...
 		// NOTE: We verbosely check the build rights so that a proper info message is sent 
-		if (EngineMain.canPlayerBuildAt(event.getPlayer(), PS.valueOf(event.getBlock()), true)) return;
+		if (EnginePermBuild.canPlayerBuildAt(event.getPlayer(), PS.valueOf(event.getBlock()), true)) return;
 		
 		// ... then cancel the event.
 		event.setCancelled(true);
@@ -79,7 +77,7 @@ public class FactionsLwcModule extends JavaModule
 		// ... and if the protection owner no longer has build rights for the area ...
 		// NOTE: We silently check the build rights for the protection owner.
 		// NOTE: The protection owner may even be offline at the moment.
-		if (EngineMain.canPlayerBuildAt(mowner, ps, false)) return;
+		if (EnginePermBuild.canPlayerBuildAt(mowner, ps, false)) return;
 		
 		// ... remove the protection ...
 		protection.remove();
@@ -93,7 +91,8 @@ public class FactionsLwcModule extends JavaModule
 		// ... play FX ...
 		Location location = block.getLocation();
 		SmokeUtil.spawnCloudSimple(location);
-		location.getWorld().playSound(location, Sound.DOOR_OPEN, 1, 1);
+		
+		SoundEffect.valueOf("DOOR_OPEN", 1, 1).run(location);
 		
 		// ... and inform.
 		Player player = event.getPlayer();

@@ -1,18 +1,18 @@
 package com.massivecraft.factions.cmd;
 
-import java.util.Collections;
-import java.util.List;
-import java.util.Set;
-
 import com.massivecraft.factions.Perm;
 import com.massivecraft.factions.entity.Board;
 import com.massivecraft.factions.entity.BoardColl;
 import com.massivecraft.factions.entity.Faction;
 import com.massivecraft.massivecore.MassiveException;
-import com.massivecraft.massivecore.cmd.req.ReqHasPerm;
-import com.massivecraft.massivecore.mixin.Mixin;
+import com.massivecraft.massivecore.command.requirement.RequirementHasPerm;
+import com.massivecraft.massivecore.mixin.MixinWorld;
 import com.massivecraft.massivecore.ps.PS;
 import com.massivecraft.massivecore.util.MUtil;
+
+import java.util.Collections;
+import java.util.List;
+import java.util.Set;
 
 
 public class CmdFactionsSetAll extends CmdFactionsSetXAll
@@ -37,8 +37,8 @@ public class CmdFactionsSetAll extends CmdFactionsSetXAll
 		this.addAliases("all");
 		
 		// Requirements
-		String node = claim ? Perm.CLAIM_ALL.node : Perm.UNCLAIM_ALL.node;
-		this.addRequirements(ReqHasPerm.get(node));
+		Perm perm = claim ? Perm.CLAIM_ALL : Perm.UNCLAIM_ALL;
+		this.addRequirements(RequirementHasPerm.get(perm));
 	}
 
 	// -------------------------------------------- //
@@ -85,7 +85,7 @@ public class CmdFactionsSetAll extends CmdFactionsSetXAll
 			}
 			Board board = BoardColl.get().get(worldId);
 			chunks = board.getChunks(oldFaction);
-			String worldDisplayName = Mixin.getWorldDisplayName(worldId);
+			String worldDisplayName = MixinWorld.get().getWorldDisplayName(worldId);
 			this.setFormatOne("<h>%s<i> %s <h>%d <i>chunk using " + word + " <h>" + worldDisplayName + "<i>.");
 			this.setFormatMany("<h>%s<i> %s <h>%d <i>chunks using " + word + " <h>" + worldDisplayName + "<i>.");
 		}

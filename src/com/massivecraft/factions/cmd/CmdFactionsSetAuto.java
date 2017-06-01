@@ -1,17 +1,17 @@
 package com.massivecraft.factions.cmd;
 
-import java.util.Collections;
-import java.util.Set;
-
 import com.massivecraft.factions.Perm;
 import com.massivecraft.factions.cmd.type.TypeFaction;
 import com.massivecraft.factions.entity.Faction;
 import com.massivecraft.factions.entity.FactionColl;
 import com.massivecraft.factions.entity.MPerm;
 import com.massivecraft.massivecore.MassiveException;
-import com.massivecraft.massivecore.cmd.req.ReqHasPerm;
-import com.massivecraft.massivecore.cmd.req.ReqIsPlayer;
+import com.massivecraft.massivecore.command.requirement.RequirementHasPerm;
+import com.massivecraft.massivecore.command.requirement.RequirementIsPlayer;
 import com.massivecraft.massivecore.ps.PS;
+
+import java.util.Collections;
+import java.util.Set;
 
 
 public class CmdFactionsSetAuto extends FactionsCommand
@@ -32,6 +32,7 @@ public class CmdFactionsSetAuto extends FactionsCommand
 	{
 		// Fields
 		this.setClaim(claim);
+		this.setSetupEnabled(false);
 		
 		// Aliases
 		this.addAliases("auto");
@@ -43,9 +44,9 @@ public class CmdFactionsSetAuto extends FactionsCommand
 		}
 
 		// Requirements
-		this.addRequirements(ReqIsPlayer.get());
-		String node = claim ? Perm.CLAIM_AUTO.node : Perm.UNCLAIM_AUTO.node;
-		this.addRequirements(ReqHasPerm.get(node));
+		this.addRequirements(RequirementIsPlayer.get());
+		Perm perm = claim ? Perm.CLAIM_AUTO : Perm.UNCLAIM_AUTO;
+		this.addRequirements(RequirementHasPerm.get(perm));
 	}
 
 	// -------------------------------------------- //

@@ -1,8 +1,6 @@
 package com.massivecraft.factions.cmd;
 
-import com.massivecraft.factions.Perm;
 import com.massivecraft.factions.cmd.req.ReqBankCommandsEnabled;
-import com.massivecraft.massivecore.cmd.req.ReqHasPerm;
 
 public class CmdFactionsMoney extends FactionsCommand
 {
@@ -23,20 +21,8 @@ public class CmdFactionsMoney extends FactionsCommand
 	
 	public CmdFactionsMoney()
 	{
-		// Children
-		this.addChild(this.cmdMoneyBalance);
-		this.addChild(this.cmdMoneyDeposit);
-		this.addChild(this.cmdMoneyWithdraw);
-		this.addChild(this.cmdMoneyTransferFf);
-		this.addChild(this.cmdMoneyTransferFp);
-		this.addChild(this.cmdMoneyTransferPf);
-		
-		// Aliases
-		this.addAliases("money");
-
 		// Requirements
 		this.addRequirements(ReqBankCommandsEnabled.get());
-		this.addRequirements(ReqHasPerm.get(Perm.MONEY.node));
 	}
 	
 }

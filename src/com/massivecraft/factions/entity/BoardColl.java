@@ -1,23 +1,21 @@
 package com.massivecraft.factions.entity;
 
-import java.util.ArrayList;
+import com.massivecraft.factions.RelationParticipator;
+import com.massivecraft.factions.TerritoryAccess;
+import com.massivecraft.massivecore.collections.MassiveMap;
+import com.massivecraft.massivecore.collections.MassiveSet;
+import com.massivecraft.massivecore.ps.PS;
+import com.massivecraft.massivecore.store.Coll;
+import com.massivecraft.massivecore.util.MUtil;
+
 import java.util.Collection;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
+import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
-
-import com.massivecraft.factions.Const;
-import com.massivecraft.factions.Factions;
-import com.massivecraft.factions.RelationParticipator;
-import com.massivecraft.factions.TerritoryAccess;
-import com.massivecraft.massivecore.collections.MassiveMap;
-import com.massivecraft.massivecore.ps.PS;
-import com.massivecraft.massivecore.store.Coll;
-import com.massivecraft.massivecore.store.MStore;
-import com.massivecraft.massivecore.util.MUtil;
 
 public class BoardColl extends Coll<Board> implements BoardInterface
 {
@@ -29,7 +27,8 @@ public class BoardColl extends Coll<Board> implements BoardInterface
 	public static BoardColl get() { return i; }
 	private BoardColl()
 	{
-		super(Const.COLLECTION_BOARD, Board.class, MStore.getDb(), Factions.get(), true, true, false);
+		this.setCreative(true);
+		this.setLowercasing(true);
 	}
 
 	// -------------------------------------------- //
@@ -51,7 +50,7 @@ public class BoardColl extends Coll<Board> implements BoardInterface
 	{
 		if (oid == null) return null;
 		if (oid instanceof String) return (String)oid;
-		if (oid instanceof Board) return this.getId(oid);
+		if (oid instanceof Board) return ((Board)oid).getId();
 		
 		return MUtil.extract(String.class, "worldName", oid);
 	}
@@ -118,43 +117,47 @@ public class BoardColl extends Coll<Board> implements BoardInterface
 		}
 	}
 	
-	@Override
-	public void clean()
-	{
-		for (Board board : this.getAll())
-		{
-			board.clean();
-		}
-	}
-	
 	// CHUNKS
 	
 	@Override
 	public Set<PS> getChunks(Faction faction)
 	{
-		Set<PS> ret = new HashSet<PS>();
+		// Create
+		Set<PS> ret = new HashSet<>();
+		
+		// Fill
 		for (Board board : this.getAll())
 		{
 			ret.addAll(board.getChunks(faction));
 		}
+		
+		// Return
 		return ret;
 	}
 	
 	@Override
 	public Set<PS> getChunks(String factionId)
 	{
-		Set<PS> ret = new HashSet<PS>();
+		// Create
+		Set<PS> ret = new HashSet<>();
+		
+		// Fill
 		for (Board board : this.getAll())
 		{
 			ret.addAll(board.getChunks(factionId));
 		}
+		
+		// Return
 		return ret;
 	}
 	
 	@Override
 	public Map<Faction, Set<PS>> getFactionToChunks()
 	{
+		// Create
 		Map<Faction, Set<PS>> ret = null;
+		
+		// Fill
 		for (Board board : this.getAll())
 		{
 			// Use the first board directly
@@ -181,7 +184,10 @@ public class BoardColl extends Coll<Board> implements BoardInterface
 			}
 		}
 		
-		if (ret == null) ret = new MassiveMap<Faction, Set<PS>>();
+		// Enforce create
+		if (ret == null) ret = new MassiveMap<>();
+		
+		// Return
 		return ret;
 	}
 	
@@ -234,8 +240,26 @@ public class BoardColl extends Coll<Board> implements BoardInterface
 			}
 		}
 		
-		if (ret == null) ret = new MassiveMap<Faction, Integer>();
+		if (ret == null) ret = new MassiveMap<>();
 		return ret;
+	}
+	
+	// COUNT
+	
+	@Override
+	public boolean hasClaimed(Faction faction)
+	{
+		return this.hasClaimed(faction.getId());
+	}
+	
+	@Override
+	public boolean hasClaimed(String factionId)
+	{
+		for (Board board : this.getAll())
+		{
+			if (board.hasClaimed(factionId)) return true;
+		}
+		return false;
 	}
 	
 	// NEARBY DETECTION
@@ -281,12 +305,36 @@ public class BoardColl extends Coll<Board> implements BoardInterface
 	// MAP GENERATION
 	
 	@Override
-	public ArrayList<String> getMap(RelationParticipator observer, PS centerPs, double inDegrees, int width, int height)
+	public List<Object> getMap(RelationParticipator observer, PS centerPs, double inDegrees, int width, int height)
 	{
 		if (centerPs == null) return null;
 		Board board = this.get(centerPs.getWorld());
 		if (board == null) return null;
 		return board.getMap(observer, centerPs, inDegrees, width, height);
+	}
+	
+	// -------------------------------------------- //
+	// WORLDS
+	// -------------------------------------------- //
+	
+	public Set<String> getClaimedWorlds(Faction faction)
+	{
+		return getClaimedWorlds(faction.getId());
+	}
+	
+	public Set<String> getClaimedWorlds(String factionId)
+	{
+		// Create
+		Set<String> ret = new MassiveSet<>();
+		
+		// Fill
+		for (Board board : this.getAll())
+		{
+			if (board.hasClaimed(factionId)) ret.add(board.getId());
+		}
+		
+		// Return
+		return ret;
 	}
 	
 	// -------------------------------------------- //
@@ -296,33 +344,35 @@ public class BoardColl extends Coll<Board> implements BoardInterface
 	// Distance -1 returns 0 chunks always.
 	// Distance 0 returns 1 chunk only (the one supplied).
 	// Distance 1 returns 3x3 = 9 chunks.
-	public static Set<PS> getNearbyChunks(PS chunk, int distance)
+	public static Set<PS> getNearbyChunks(PS psChunk, int distance)
 	{
 		// Fix Args
-		if (chunk == null) throw new NullPointerException("chunk");
-		chunk = chunk.getChunk(true);
+		if (psChunk == null) throw new NullPointerException("psChunk");
+		psChunk = psChunk.getChunk(true);
 		
-		// Create Ret
-		Set<PS> ret = new LinkedHashSet<PS>();
-		
+		// Create
+		Set<PS> ret = new LinkedHashSet<>();
 		if (distance < 0) return ret;
 		
-		// Main
-		int xmin = chunk.getChunkX() - distance;
-		int xmax = chunk.getChunkX() + distance;
+		// Fill
+		int chunkX = psChunk.getChunkX();
+		int xmin = chunkX - distance;
+		int xmax = chunkX + distance;
 		
-		int zmin = chunk.getChunkZ() - distance;
-		int zmax = chunk.getChunkZ() + distance;
+		int chunkZ = psChunk.getChunkZ();
+		int zmin = chunkZ - distance;
+		int zmax = chunkZ + distance;
 		
 		for (int x = xmin; x <= xmax; x++)
 		{
+			PS psChunkX = psChunk.withChunkX(x);
 			for (int z = zmin; z <= zmax; z++)
 			{
-				ret.add(chunk.withChunkX(x).withChunkZ(z));
+				ret.add(psChunkX.withChunkZ(z));
 			}
 		}
 		
-		// Return Ret
+		// Return
 		return ret;
 	}
 	
@@ -331,18 +381,18 @@ public class BoardColl extends Coll<Board> implements BoardInterface
 		// Fix Args
 		if (chunks == null) throw new NullPointerException("chunks");
 		
-		// Create Ret
-		Set<PS> ret = new LinkedHashSet<PS>();
+		// Create
+		Set<PS> ret = new LinkedHashSet<>();
 		
 		if (distance < 0) return ret;
 		
-		// Main
+		// Fill
 		for (PS chunk : chunks)
 		{
 			ret.addAll(getNearbyChunks(chunk, distance));
 		}
 		
-		// Return Ret
+		// Return
 		return ret;
 	}
 	
@@ -351,33 +401,37 @@ public class BoardColl extends Coll<Board> implements BoardInterface
 		// Fix Args
 		if (chunks == null) throw new NullPointerException("chunks");
 		
-		// Create Ret
-		Set<Faction> ret = new LinkedHashSet<Faction>();
+		// Create
+		Set<Faction> ret = new LinkedHashSet<>();
 		
-		// Main
+		// Fill
 		for (PS chunk : chunks)
 		{
-			Faction faction = BoardColl.get().getFactionAt(chunk);
+			Faction faction = get().getFactionAt(chunk);
 			if (faction == null) continue;
 			ret.add(faction);
 		}
 		
-		// Return Ret
+		// Return
 		return ret;
 	}
 	
 	public static Map<PS, Faction> getChunkFaction(Collection<PS> chunks)
 	{
-		Map<PS, Faction> ret = new LinkedHashMap<PS, Faction>();
+		// Create
+		Map<PS, Faction> ret = new LinkedHashMap<>();
 		
+		// Fill
+		Faction none = FactionColl.get().getNone();
 		for (PS chunk : chunks)
 		{
 			chunk = chunk.getChunk(true);
 			Faction faction = get().getFactionAt(chunk);
-			if (faction == null) faction = FactionColl.get().getNone();
+			if (faction == null) faction = none;
 			ret.put(chunk, faction);
 		}
 		
+		// Return
 		return ret;
 	}
 	

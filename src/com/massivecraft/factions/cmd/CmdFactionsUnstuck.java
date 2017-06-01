@@ -1,12 +1,5 @@
 package com.massivecraft.factions.cmd;
 
-import java.util.ArrayList;
-import java.util.List;
-
-import org.bukkit.Location;
-import org.bukkit.World;
-
-import com.massivecraft.factions.Perm;
 import com.massivecraft.factions.entity.BoardColl;
 import com.massivecraft.factions.entity.Faction;
 import com.massivecraft.factions.entity.FactionColl;
@@ -14,13 +7,17 @@ import com.massivecraft.factions.entity.MConf;
 import com.massivecraft.factions.entity.MPerm;
 import com.massivecraft.factions.entity.MPlayer;
 import com.massivecraft.massivecore.MassiveException;
-import com.massivecraft.massivecore.cmd.req.ReqHasPerm;
-import com.massivecraft.massivecore.cmd.req.ReqIsPlayer;
-import com.massivecraft.massivecore.mixin.Mixin;
+import com.massivecraft.massivecore.command.requirement.RequirementIsPlayer;
+import com.massivecraft.massivecore.mixin.MixinTeleport;
 import com.massivecraft.massivecore.mixin.TeleporterException;
 import com.massivecraft.massivecore.ps.PS;
 import com.massivecraft.massivecore.teleport.Destination;
 import com.massivecraft.massivecore.teleport.DestinationSimple;
+import org.bukkit.Location;
+import org.bukkit.World;
+
+import java.util.ArrayList;
+import java.util.List;
 
 public class CmdFactionsUnstuck extends FactionsCommand
 {
@@ -30,12 +27,8 @@ public class CmdFactionsUnstuck extends FactionsCommand
 	
 	public CmdFactionsUnstuck()
 	{
-		// Aliases
-		this.addAliases("unstuck");
-		
 		// Requirements
-		this.addRequirements(ReqHasPerm.get(Perm.UNSTUCK.node));
-		this.addRequirements(ReqIsPlayer.get());
+		this.addRequirements(RequirementIsPlayer.get());
 	}
 
 	// -------------------------------------------- //
@@ -67,7 +60,7 @@ public class CmdFactionsUnstuck extends FactionsCommand
 		Destination destination = new DestinationSimple(PS.valueOf(location));
 		try
 		{
-			Mixin.teleport(me, destination, MConf.get().unstuckSeconds);
+			MixinTeleport.get().teleport(me, destination, MConf.get().unstuckSeconds);
 		}
 		catch (TeleporterException e)
 		{
@@ -129,7 +122,7 @@ public class CmdFactionsUnstuck extends FactionsCommand
 	public static List<PS> getChunkSpiral(PS center)
 	{
 		// Create Ret
-		List<PS> ret = new ArrayList<PS>();
+		List<PS> ret = new ArrayList<>();
 		
 		// Fill Ret
 		center = center.getChunk(true);

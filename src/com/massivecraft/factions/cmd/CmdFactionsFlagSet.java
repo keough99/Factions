@@ -1,6 +1,5 @@
 package com.massivecraft.factions.cmd;
 
-import com.massivecraft.factions.Perm;
 import com.massivecraft.factions.cmd.type.TypeFaction;
 import com.massivecraft.factions.cmd.type.TypeMFlag;
 import com.massivecraft.factions.entity.Faction;
@@ -8,8 +7,7 @@ import com.massivecraft.factions.entity.MFlag;
 import com.massivecraft.factions.entity.MPerm;
 import com.massivecraft.factions.event.EventFactionsFlagChange;
 import com.massivecraft.massivecore.MassiveException;
-import com.massivecraft.massivecore.cmd.req.ReqHasPerm;
-import com.massivecraft.massivecore.cmd.type.TypeBoolean;
+import com.massivecraft.massivecore.command.type.primitive.TypeBooleanYes;
 
 public class CmdFactionsFlagSet extends FactionsCommand
 {
@@ -19,16 +17,10 @@ public class CmdFactionsFlagSet extends FactionsCommand
 	
 	public CmdFactionsFlagSet()
 	{
-		// Aliases
-		this.addAliases("set");
-		
 		// Parameters
 		this.addParameter(TypeMFlag.get(), "flag");
-		this.addParameter(TypeBoolean.get(), "yes/no");
+		this.addParameter(TypeBooleanYes.get(), "yes/no");
 		this.addParameter(TypeFaction.get(), "faction", "you");
-		
-		// Requirements
-		this.addRequirements(ReqHasPerm.get(Perm.FLAG_SET.node));
 	}
 	
 	// -------------------------------------------- //
@@ -47,7 +39,7 @@ public class CmdFactionsFlagSet extends FactionsCommand
 		if ( ! MPerm.getPermFlags().has(msender, faction, true)) return;
 		
 		// Is this flag editable?
-		if (!msender.isUsingAdminMode() && ! flag.isEditable())
+		if (!msender.isOverriding() && ! flag.isEditable())
 		{
 			msg("<b>The flag <h>%s <b>is not editable.", flag.getName());
 			return;

@@ -1,23 +1,19 @@
 package com.massivecraft.factions.cmd;
 
-import java.util.ArrayList;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Set;
-
-import org.bukkit.ChatColor;
-
-import com.massivecraft.factions.Factions;
-import com.massivecraft.factions.Perm;
 import com.massivecraft.factions.cmd.type.TypeMPlayer;
 import com.massivecraft.factions.entity.MPerm;
 import com.massivecraft.factions.entity.MPlayer;
 import com.massivecraft.factions.event.EventFactionsInvitedChange;
 import com.massivecraft.massivecore.MassiveException;
-import com.massivecraft.massivecore.cmd.req.ReqHasPerm;
-import com.massivecraft.massivecore.cmd.type.TypeSet;
+import com.massivecraft.massivecore.command.type.container.TypeSet;
 import com.massivecraft.massivecore.mson.Mson;
 import com.massivecraft.massivecore.util.Txt;
+import org.bukkit.ChatColor;
+
+import java.util.ArrayList;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Set;
 
 public class CmdFactionsInviteRemove extends FactionsCommand
 {
@@ -26,14 +22,8 @@ public class CmdFactionsInviteRemove extends FactionsCommand
 	// -------------------------------------------- //
 	public CmdFactionsInviteRemove()
 	{
-		// Aliases
-		this.addAliases("remove");
-
 		// Parameters
-		this.addParameter(TypeSet.get(TypeMPlayer.get(), true), "players/all", true);
-		
-		// Requirements
-		this.addRequirements(ReqHasPerm.get(Perm.INVITE_REMOVE.node));
+		this.addParameter(TypeSet.get(TypeMPlayer.get()), "players/all", true);
 	}
 	
 	// -------------------------------------------- //
@@ -43,21 +33,24 @@ public class CmdFactionsInviteRemove extends FactionsCommand
 	@Override
 	public void perform() throws MassiveException
 	{
-		Set<MPlayer> mplayers = new HashSet<MPlayer>();
+		Set<MPlayer> mplayers = new HashSet<>();
 		boolean all = false;
 		
 		// Args
 		if ("all".equalsIgnoreCase(this.argAt(0)))
 		{
-			List<MPlayer> invitedPlayers = msenderFaction.getInvitedMPlayers();
+			Set<String> ids = msenderFaction.getInvitations().keySet();
 			// Doesn't show up if list is empty. Test at home if it worked.
-			if (invitedPlayers == null || invitedPlayers.isEmpty())
+			if (ids == null || ids.isEmpty())
 			{
-				msg("<b>Your faction has not invited anyone.");
-				return;
+				throw new MassiveException().addMsg("<b>No one is invited to your faction.");
 			}
 			all = true;
-			mplayers.addAll(invitedPlayers);
+			
+			for (String id : ids)
+			{
+				mplayers.add(MPlayer.get(id));
+			}
 		}
 		else
 		{
@@ -73,7 +66,7 @@ public class CmdFactionsInviteRemove extends FactionsCommand
 			if (mplayer.getFaction() == msenderFaction)
 			{
 				// Mson
-				String command = Factions.get().getOuterCmdFactions().cmdFactionsKick.getCommandLine(mplayer.getName());
+				String command = CmdFactions.get().cmdFactionsKick.getCommandLine(mplayer.getName());
 				String tooltip = Txt.parse("Click to <c>%s<i>.", command);
 				
 				Mson kick = Mson.mson(
@@ -82,7 +75,7 @@ public class CmdFactionsInviteRemove extends FactionsCommand
 				);
 				
 				// Inform
-				msg("%s<i> is already a member of %s<i>.", mplayer.getName(), msenderFaction.getName());
+				msg("%s<i> is already a member of %s<i>.", mplayer.getName(), msenderFaction.getName(msender));
 				message(kick);
 				continue;
 			}
@@ -108,12 +101,15 @@ public class CmdFactionsInviteRemove extends FactionsCommand
 				}
 				
 				// Apply
-				msenderFaction.setInvited(mplayer, false);
+				msenderFaction.uninvite(mplayer);
+				
+				// If all, we do this at last. So we only do it once.
+				if (! all) msenderFaction.changed();
 			}
 			else
 			{
 				// Mson
-				String command = Factions.get().getOuterCmdFactions().cmdFactionsInvite.cmdFactionsInviteAdd.getCommandLine(mplayer.getName());
+				String command = CmdFactions.get().cmdFactionsInvite.cmdFactionsInviteAdd.getCommandLine(mplayer.getName());
 				String tooltip = Txt.parse("Click to <c>%s<i>.", command);
 				
 				Mson invite = Mson.mson(
@@ -130,7 +126,7 @@ public class CmdFactionsInviteRemove extends FactionsCommand
 		// Inform Faction if all
 		if (all)
 		{
-			List<String> names = new ArrayList<String>();
+			List<String> names = new ArrayList<>();
 			for (MPlayer mplayer : mplayers)
 			{
 				names.add(mplayer.describeTo(msender, true));
@@ -143,6 +139,7 @@ public class CmdFactionsInviteRemove extends FactionsCommand
 			);
 			
 			msenderFaction.sendMessage(factionsRevokeAll);
+			msenderFaction.changed();
 		}
 	}
 	

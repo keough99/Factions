@@ -1,8 +1,5 @@
 package com.massivecraft.factions.cmd;
 
-import java.util.HashSet;
-import java.util.Set;
-
 import com.massivecraft.factions.Factions;
 import com.massivecraft.factions.Perm;
 import com.massivecraft.factions.Rel;
@@ -18,8 +15,10 @@ import com.massivecraft.factions.event.EventFactionsMembershipChange;
 import com.massivecraft.factions.event.EventFactionsMembershipChange.MembershipChangeReason;
 import com.massivecraft.factions.event.EventFactionsRankChange;
 import com.massivecraft.massivecore.MassiveException;
-import com.massivecraft.massivecore.cmd.req.ReqHasPerm;
 import com.massivecraft.massivecore.util.Txt;
+
+import java.util.HashSet;
+import java.util.Set;
 
 public class CmdFactionsRank extends FactionsCommand
 {
@@ -48,25 +47,16 @@ public class CmdFactionsRank extends FactionsCommand
 	private Rel targetRank = null;
 	private Rel rank = null;
 	
-	// This one is permanent
-	private TypeRank rankReader = new TypeRank();
-	
 	// -------------------------------------------- //
 	// CONSTRUCT
 	// -------------------------------------------- //
 	
 	public CmdFactionsRank()
 	{
-		// Aliases
-		this.addAliases("rank");
-	
 		// Parameters
 		this.addParameter(TypeMPlayer.get(), "player");
-		this.addParameter(rankReader, "action", "show");
+		this.addParameter(TypeRank.get(), "action", "show");
 		this.addParameter(TypeFaction.get(), "faction", "their");
-	
-		// Requirements
-		this.addRequirements(ReqHasPerm.get(Perm.RANK.node));
 	}
 	
 	// -------------------------------------------- //
@@ -141,7 +131,7 @@ public class CmdFactionsRank extends FactionsCommand
 		// Rank if any passed.
 		if (this.argIsSet(1))
 		{
-			this.rankReader.setStartRank(targetRank);
+			this.setParameterType(1, TypeRank.get(targetRank));
 			rank = this.readArg();
 		}
 		
@@ -168,7 +158,7 @@ public class CmdFactionsRank extends FactionsCommand
 	private void ensureAllowed() throws MassiveException
 	{
 		// People with permission don't follow the normal rules.
-		if (msender.isUsingAdminMode()) return;
+		if (msender.isOverriding()) return;
 		
 		// If somone gets the leadership of wilderness (Which has happened before).
 		// We can at least try to limit their powers.
@@ -235,7 +225,7 @@ public class CmdFactionsRank extends FactionsCommand
 		// Don't change their rank to something they already are.
 		if (target.getRole() == rank)
 		{
-			throw new MassiveException().addMsg("%s <b>is already %s<b>.", target.describeTo(msender), rank.getColor() + rank.getDescPlayerOne());
+			throw new MassiveException().addMsg("%s <b>is already %s.", target.describeTo(msender), rank.getDescPlayerOne());
 		}
 	}
 	
@@ -264,7 +254,7 @@ public class CmdFactionsRank extends FactionsCommand
 		}
 		else
 		{
-			// Derp    is  a   member in Faction
+			// Derp	is a member in Faction
 			msg("%s <i>%s %s <h>%s <i>%s %s<i>.", targetName, isAre, theAan, rankName, ofIn, factionName);
 		}
 	}
@@ -291,10 +281,10 @@ public class CmdFactionsRank extends FactionsCommand
 		target.setFaction(endFaction);
 		
 		// No longer invited.
-		endFaction.setInvited(target, false);
+		endFaction.uninvite(target);
 
 		// Create recipients
-		Set<MPlayer> recipients = new HashSet<MPlayer>();
+		Set<MPlayer> recipients = new HashSet<>();
 		recipients.addAll(targetFaction.getMPlayersWhereOnline(true));
 		recipients.addAll(endFaction.getMPlayersWhereOnline(true));
 		recipients.add(msender);
@@ -379,7 +369,7 @@ public class CmdFactionsRank extends FactionsCommand
 		}
 
 		// Create recipients
-		Set<MPlayer> recipients = new HashSet<MPlayer>();
+		Set<MPlayer> recipients = new HashSet<>();
 		recipients.addAll(targetFaction.getMPlayers());
 		recipients.add(msender);
 		

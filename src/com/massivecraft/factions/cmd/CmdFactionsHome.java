@@ -1,30 +1,25 @@
 package com.massivecraft.factions.cmd;
 
-import org.bukkit.Location;
-import org.bukkit.World;
-import org.bukkit.entity.Player;
-
-import com.massivecraft.factions.Factions;
-import com.massivecraft.factions.Perm;
 import com.massivecraft.factions.Rel;
 import com.massivecraft.factions.cmd.type.TypeFaction;
 import com.massivecraft.factions.entity.BoardColl;
+import com.massivecraft.factions.entity.Faction;
 import com.massivecraft.factions.entity.MConf;
 import com.massivecraft.factions.entity.MFlag;
 import com.massivecraft.factions.entity.MPerm;
 import com.massivecraft.factions.entity.MPlayer;
-import com.massivecraft.factions.entity.Faction;
 import com.massivecraft.factions.event.EventFactionsHomeTeleport;
 import com.massivecraft.massivecore.MassiveException;
-import com.massivecraft.massivecore.cmd.req.ReqHasPerm;
-import com.massivecraft.massivecore.cmd.req.ReqIsPlayer;
-import com.massivecraft.massivecore.mixin.Mixin;
+import com.massivecraft.massivecore.command.requirement.RequirementIsPlayer;
+import com.massivecraft.massivecore.mixin.MixinTeleport;
 import com.massivecraft.massivecore.mixin.TeleporterException;
 import com.massivecraft.massivecore.ps.PS;
 import com.massivecraft.massivecore.teleport.Destination;
 import com.massivecraft.massivecore.teleport.DestinationSimple;
 import com.massivecraft.massivecore.util.MUtil;
-
+import org.bukkit.Location;
+import org.bukkit.World;
+import org.bukkit.entity.Player;
 
 public class CmdFactionsHome extends FactionsCommandHome
 {
@@ -34,15 +29,11 @@ public class CmdFactionsHome extends FactionsCommandHome
 	
 	public CmdFactionsHome()
 	{
-		// Aliases
-		this.addAliases("home");
-		
 		// Parameters
 		this.addParameter(TypeFaction.get(), "faction", "you");
 
 		// Requirements
-		this.addRequirements(ReqHasPerm.get(Perm.HOME.node));
-		this.addRequirements(ReqIsPlayer.get());
+		this.addRequirements(RequirementIsPlayer.get());
 	}
 	
 	// -------------------------------------------- //
@@ -73,7 +64,7 @@ public class CmdFactionsHome extends FactionsCommandHome
 			if (MPerm.getPermSethome().has(msender, faction, false))
 			{
 				msender.msg("<i>You should:");
-				msender.message(Factions.get().getOuterCmdFactions().cmdFactionsSethome.getTemplate());
+				msender.message(CmdFactions.get().cmdFactionsSethome.getTemplate());
 			}
 			
 			return;
@@ -153,7 +144,7 @@ public class CmdFactionsHome extends FactionsCommandHome
 		try
 		{
 			Destination destination = new DestinationSimple(home, homeDesc);
-			Mixin.teleport(me, destination, sender);
+			MixinTeleport.get().teleport(me, destination, sender);
 		}
 		catch (TeleporterException e)
 		{

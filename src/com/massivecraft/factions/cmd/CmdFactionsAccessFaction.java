@@ -1,13 +1,11 @@
 package com.massivecraft.factions.cmd;
 
-import com.massivecraft.factions.Perm;
 import com.massivecraft.factions.cmd.type.TypeFaction;
 import com.massivecraft.factions.entity.BoardColl;
 import com.massivecraft.factions.entity.Faction;
 import com.massivecraft.factions.entity.MPerm;
 import com.massivecraft.massivecore.MassiveException;
-import com.massivecraft.massivecore.cmd.req.ReqHasPerm;
-import com.massivecraft.massivecore.cmd.type.TypeBoolean;
+import com.massivecraft.massivecore.command.type.primitive.TypeBooleanYes;
 
 public class CmdFactionsAccessFaction extends CmdFactionsAccessAbstract
 {
@@ -17,15 +15,9 @@ public class CmdFactionsAccessFaction extends CmdFactionsAccessAbstract
 	
 	public CmdFactionsAccessFaction()
 	{
-		// Aliases
-		this.addAliases("faction");
-		
 		// Parameters
 		this.addParameter(TypeFaction.get(), "faction");
-		this.addParameter(TypeBoolean.get(), "yes/no", "toggle");
-
-		// Requirements
-		this.addRequirements(ReqHasPerm.get(Perm.ACCESS_FACTION.node));
+		this.addParameter(TypeBooleanYes.get(), "yes/no", "toggle");
 	}
 
 	// -------------------------------------------- //
@@ -37,7 +29,7 @@ public class CmdFactionsAccessFaction extends CmdFactionsAccessAbstract
 	{
 		// Args
 		Faction faction = this.readArg();
-		boolean newValue = this.readArg(!ta.isFactionIdGranted(faction.getId()));
+		boolean newValue = this.readArg(!ta.isFactionGranted(faction));
 		
 		// MPerm
 		if (!MPerm.getPermAccess().has(msender, hostFaction, true)) return;

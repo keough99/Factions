@@ -1,15 +1,18 @@
 package com.massivecraft.factions.cmd.req;
 
-import org.bukkit.command.CommandSender;
-
 import com.massivecraft.factions.entity.MConf;
 import com.massivecraft.factions.integration.Econ;
-import com.massivecraft.massivecore.cmd.MassiveCommand;
-import com.massivecraft.massivecore.cmd.req.ReqAbstract;
+import com.massivecraft.massivecore.command.MassiveCommand;
+import com.massivecraft.massivecore.command.requirement.RequirementAbstract;
 import com.massivecraft.massivecore.util.Txt;
+import org.bukkit.command.CommandSender;
 
-public class ReqBankCommandsEnabled extends ReqAbstract
+public class ReqBankCommandsEnabled extends RequirementAbstract
 {
+	// -------------------------------------------- //
+	// SERIALIZABLE
+	// -------------------------------------------- //
+	
 	private static final long serialVersionUID = 1L;
 	
 	// -------------------------------------------- //
@@ -32,11 +35,8 @@ public class ReqBankCommandsEnabled extends ReqAbstract
 	@Override
 	public String createErrorMessage(CommandSender sender, MassiveCommand command)
 	{
-		if ( ! MConf.get().bankEnabled)
-		{
-			return Txt.parse("<b>Faction banks are disabled.");
-		}
-		return Txt.parse("<b>Faction economy features are disabled.");
+		String what = !MConf.get().bankEnabled ? "banks" : "economy features";
+		return Txt.parse("<b>Faction %s are disabled.", what);
 	}
 	
 }

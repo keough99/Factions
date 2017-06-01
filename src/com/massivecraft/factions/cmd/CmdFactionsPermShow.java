@@ -1,19 +1,16 @@
 package com.massivecraft.factions.cmd;
 
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.List;
-
-import com.massivecraft.factions.Perm;
 import com.massivecraft.factions.cmd.type.TypeFaction;
 import com.massivecraft.factions.cmd.type.TypeMPerm;
 import com.massivecraft.factions.entity.Faction;
 import com.massivecraft.factions.entity.MPerm;
 import com.massivecraft.massivecore.MassiveException;
-import com.massivecraft.massivecore.cmd.req.ReqHasPerm;
-import com.massivecraft.massivecore.cmd.type.TypeAll;
-import com.massivecraft.massivecore.cmd.type.TypeSet;
+import com.massivecraft.massivecore.command.type.container.TypeSet;
 import com.massivecraft.massivecore.util.Txt;
+
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.List;
 
 public class CmdFactionsPermShow extends FactionsCommand
 {
@@ -23,15 +20,9 @@ public class CmdFactionsPermShow extends FactionsCommand
 	
 	public CmdFactionsPermShow()
 	{
-		// Aliases
-		this.addAliases("show");
-		
 		// Parameters
 		this.addParameter(TypeFaction.get(), "faction", "you");
-		this.addParameter(TypeAll.get(TypeSet.get(TypeMPerm.get(), false)), "perms", "all", true);
-		
-		// Requirements
-		this.addRequirements(ReqHasPerm.get(Perm.PERM_SHOW.node));
+		this.addParameter(TypeSet.get(TypeMPerm.get()), "perms", "all", true);
 	}
 
 	// -------------------------------------------- //
@@ -46,7 +37,7 @@ public class CmdFactionsPermShow extends FactionsCommand
 		Collection<MPerm> mperms = this.readArg(MPerm.getAll());
 
 		// Create messages
-		List<String> messages = new ArrayList<String>();
+		List<Object> messages = new ArrayList<>();
 
 		messages.add(Txt.titleize("Perm for " + faction.describeTo(msender, true)));
 		messages.add(MPerm.getStateHeaders());

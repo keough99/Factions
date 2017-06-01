@@ -1,40 +1,39 @@
 package com.massivecraft.factions.engine;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map.Entry;
-import java.util.Set;
-
-import org.bukkit.event.EventHandler;
-import org.bukkit.event.EventPriority;
-import org.bukkit.plugin.Plugin;
-
 import com.massivecraft.factions.Factions;
+import com.massivecraft.factions.cmd.CmdFactions;
 import com.massivecraft.factions.entity.Faction;
 import com.massivecraft.factions.entity.MConf;
 import com.massivecraft.factions.entity.MPlayer;
 import com.massivecraft.factions.event.EventFactionsAbstractSender;
-import com.massivecraft.factions.event.EventFactionsChunksChange;
 import com.massivecraft.factions.event.EventFactionsChunkChangeType;
+import com.massivecraft.factions.event.EventFactionsChunksChange;
 import com.massivecraft.factions.event.EventFactionsCreate;
 import com.massivecraft.factions.event.EventFactionsDescriptionChange;
 import com.massivecraft.factions.event.EventFactionsDisband;
+import com.massivecraft.factions.event.EventFactionsFlagChange;
 import com.massivecraft.factions.event.EventFactionsHomeChange;
 import com.massivecraft.factions.event.EventFactionsHomeTeleport;
 import com.massivecraft.factions.event.EventFactionsInvitedChange;
 import com.massivecraft.factions.event.EventFactionsMembershipChange;
 import com.massivecraft.factions.event.EventFactionsMembershipChange.MembershipChangeReason;
 import com.massivecraft.factions.event.EventFactionsNameChange;
-import com.massivecraft.factions.event.EventFactionsFlagChange;
 import com.massivecraft.factions.event.EventFactionsRelationChange;
 import com.massivecraft.factions.event.EventFactionsTitleChange;
 import com.massivecraft.factions.integration.Econ;
-import com.massivecraft.massivecore.EngineAbstract;
+import com.massivecraft.massivecore.Engine;
 import com.massivecraft.massivecore.money.Money;
 import com.massivecraft.massivecore.ps.PS;
 import com.massivecraft.massivecore.util.Txt;
+import org.bukkit.event.EventHandler;
+import org.bukkit.event.EventPriority;
 
-public class EngineEcon extends EngineAbstract
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map.Entry;
+import java.util.Set;
+
+public class EngineEcon extends Engine
 {
 	// -------------------------------------------- //
 	// INSTANCE & CONSTRUCT
@@ -42,17 +41,6 @@ public class EngineEcon extends EngineAbstract
 	
 	private static EngineEcon i = new EngineEcon();
 	public static EngineEcon get() { return i; }
-	public EngineEcon() {}
-	
-	// -------------------------------------------- //
-	// OVERRIDE
-	// -------------------------------------------- //
-	
-	@Override
-	public Plugin getPlugin()
-	{
-		return Factions.get();
-	}
 
 	// -------------------------------------------- //
 	// TAKE ON LEAVE
@@ -82,9 +70,9 @@ public class EngineEcon extends EngineAbstract
 	@EventHandler(priority = EventPriority.MONITOR, ignoreCancelled = true)
 	public void takeOnDisband(EventFactionsDisband event)
 	{
-		// If there is a usender ...
-		MPlayer usender = event.getMSender();
-		if (usender == null) return;
+		// If there is a mplayer ...
+		MPlayer mplayer = event.getMPlayer();
+		if (mplayer == null) return;
 		
 		// ... and economy is enabled ...
 		if (!Econ.isEnabled()) return;
@@ -93,12 +81,16 @@ public class EngineEcon extends EngineAbstract
 		Faction faction = event.getFaction();
 	
 		double amount = Money.get(faction);
+	
+		// Check that there is an amount
+		if (amount == 0) return;
+
 		String amountString = Money.format(amount);
 		
-		Econ.transferMoney(faction, usender, usender, amount, true);
+		Econ.transferMoney(faction, mplayer, mplayer, amount, true);
 		
-		usender.msg("<i>You have been given the disbanded faction's bank, totaling %s.", amountString);
-		Factions.get().log(usender.getName() + " has been given bank holdings of "+amountString+" from disbanding "+faction.getName()+".");
+		mplayer.msg("<i>You have been given the disbanded faction's bank, totaling %s.", amountString);
+		Factions.get().log(mplayer.getName() + " has been given bank holdings of "+amountString+" from disbanding "+faction.getName()+".");
 	}
 	
 	// -------------------------------------------- //
@@ -107,16 +99,16 @@ public class EngineEcon extends EngineAbstract
 	
 	public static void payForAction(EventFactionsAbstractSender event, Double cost, String desc)
 	{
-		// If there is a sender ...
-		MPlayer usender = event.getMSender();
-		if (usender == null) return;
+		// If there is an mplayer ...
+		MPlayer mplayer = event.getMPlayer();
+		if (mplayer == null) return;
 		
 		// ... and there is a cost ...
 		if (cost == null) return;
 		if (cost == 0) return;
 		
 		// ... that the sender can't afford ...
-		if (Econ.payForAction(cost, usender, desc)) return;
+		if (Econ.payForAction(cost, mplayer, desc)) return;
 		
 		// ... then cancel.
 		event.setCancelled(true);
@@ -126,7 +118,7 @@ public class EngineEcon extends EngineAbstract
 	public void payForAction(EventFactionsChunksChange event)
 	{
 		double cost = 0;
-		List<String> typeNames = new ArrayList<String>();
+		List<String> typeNames = new ArrayList<>();
 		
 		for (Entry<EventFactionsChunkChangeType, Set<PS>> typeChunks : event.getTypeChunks().entrySet())
 		{
@@ -180,8 +172,7 @@ public class EngineEcon extends EngineAbstract
 	public void payForCommand(EventFactionsRelationChange event)
 	{
 		Double cost = MConf.get().econRelCost.get(event.getNewRelation());
-		String desc = Factions.get().getOuterCmdFactions().cmdFactionsRelationNeutral.getDesc();
-		
+		String desc = CmdFactions.get().cmdFactionsRelation.cmdFactionsRelationSet.getDesc();
 		payForAction(event, cost, desc);
 	}
 	
@@ -189,7 +180,7 @@ public class EngineEcon extends EngineAbstract
 	public void payForCommand(EventFactionsHomeChange event)
 	{
 		Double cost = MConf.get().econCostSethome;
-		String desc = Factions.get().getOuterCmdFactions().cmdFactionsSethome.getDesc();
+		String desc = CmdFactions.get().cmdFactionsSethome.getDesc();
 		
 		payForAction(event, cost, desc);
 	}
@@ -198,7 +189,7 @@ public class EngineEcon extends EngineAbstract
 	public void payForCommand(EventFactionsCreate event)
 	{
 		Double cost = MConf.get().econCostCreate;
-		String desc = Factions.get().getOuterCmdFactions().cmdFactionsCreate.getDesc();
+		String desc = CmdFactions.get().cmdFactionsCreate.getDesc();
 		
 		payForAction(event, cost, desc);
 	}
@@ -207,7 +198,7 @@ public class EngineEcon extends EngineAbstract
 	public void payForCommand(EventFactionsDescriptionChange event)
 	{
 		Double cost = MConf.get().econCostDescription;
-		String desc = Factions.get().getOuterCmdFactions().cmdFactionsDescription.getDesc();
+		String desc = CmdFactions.get().cmdFactionsDescription.getDesc();
 		
 		payForAction(event, cost, desc);
 	}
@@ -216,7 +207,7 @@ public class EngineEcon extends EngineAbstract
 	public void payForCommand(EventFactionsNameChange event)
 	{
 		Double cost = MConf.get().econCostName;
-		String desc = Factions.get().getOuterCmdFactions().cmdFactionsName.getDesc();
+		String desc = CmdFactions.get().cmdFactionsName.getDesc();
 		
 		payForAction(event, cost, desc);
 	}
@@ -225,7 +216,7 @@ public class EngineEcon extends EngineAbstract
 	public void payForCommand(EventFactionsTitleChange event)
 	{
 		Double cost = MConf.get().econCostTitle;
-		String desc = Factions.get().getOuterCmdFactions().cmdFactionsTitle.getDesc();
+		String desc = CmdFactions.get().cmdFactionsTitle.getDesc();
 		
 		payForAction(event, cost, desc);
 	}
@@ -234,7 +225,7 @@ public class EngineEcon extends EngineAbstract
 	public void payForCommand(EventFactionsFlagChange event)
 	{
 		Double cost = MConf.get().econCostFlag;
-		String desc = Factions.get().getOuterCmdFactions().cmdFactionsFlag.getDesc();
+		String desc = CmdFactions.get().cmdFactionsFlag.getDesc();
 		
 		payForAction(event, cost, desc);
 	}
@@ -243,7 +234,7 @@ public class EngineEcon extends EngineAbstract
 	public void payForCommand(EventFactionsInvitedChange event)
 	{
 		Double cost = event.isNewInvited() ? MConf.get().econCostInvite : MConf.get().econCostDeinvite;
-		String desc = Factions.get().getOuterCmdFactions().cmdFactionsInvite.getDesc();
+		String desc = CmdFactions.get().cmdFactionsInvite.getDesc();
 		
 		payForAction(event, cost, desc);
 	}
@@ -252,7 +243,7 @@ public class EngineEcon extends EngineAbstract
 	public void payForCommand(EventFactionsHomeTeleport event)
 	{
 		Double cost = MConf.get().econCostHome;
-		String desc = Factions.get().getOuterCmdFactions().cmdFactionsHome.getDesc();
+		String desc = CmdFactions.get().cmdFactionsHome.getDesc();
 		
 		payForAction(event, cost, desc);
 	}

@@ -1,16 +1,19 @@
 package com.massivecraft.factions.cmd.req;
 
-import org.bukkit.command.CommandSender;
-
 import com.massivecraft.factions.Rel;
 import com.massivecraft.factions.entity.MPlayer;
-import com.massivecraft.massivecore.cmd.MassiveCommand;
-import com.massivecraft.massivecore.cmd.req.ReqAbstract;
+import com.massivecraft.massivecore.command.MassiveCommand;
+import com.massivecraft.massivecore.command.requirement.RequirementAbstract;
 import com.massivecraft.massivecore.util.MUtil;
 import com.massivecraft.massivecore.util.Txt;
+import org.bukkit.command.CommandSender;
 
-public class ReqRoleIsAtLeast extends ReqAbstract
+public class ReqRoleIsAtLeast extends RequirementAbstract
 {
+	// -------------------------------------------- //
+	// SERIALIZABLE
+	// -------------------------------------------- //
+	
 	private static final long serialVersionUID = 1L;
 	
 	// -------------------------------------------- //
@@ -37,13 +40,13 @@ public class ReqRoleIsAtLeast extends ReqAbstract
 		if (MUtil.isntSender(sender)) return false;
 		
 		MPlayer mplayer = MPlayer.get(sender);
-		return mplayer.getRole().isAtLeast(this.rel);
+		return mplayer.getRole().isAtLeast(this.getRel());
 	}
 	
 	@Override
 	public String createErrorMessage(CommandSender sender, MassiveCommand command)
 	{
-		return Txt.parse("<b>You must be <h>%s <b>or higher to "+(command == null ? "do that" : command.getDesc())+".", Txt.getNicedEnum(this.rel));
+		return Txt.parse("<b>You must be <h>%s <b>or higher to %s.", Txt.getNicedEnum(this.getRel()), getDesc(command));
 	}
 	
 }

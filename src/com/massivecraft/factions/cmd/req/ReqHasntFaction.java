@@ -1,15 +1,18 @@
 package com.massivecraft.factions.cmd.req;
 
-import org.bukkit.command.CommandSender;
-
 import com.massivecraft.factions.entity.MPlayer;
-import com.massivecraft.massivecore.cmd.MassiveCommand;
-import com.massivecraft.massivecore.cmd.req.ReqAbstract;
+import com.massivecraft.massivecore.command.MassiveCommand;
+import com.massivecraft.massivecore.command.requirement.RequirementAbstract;
 import com.massivecraft.massivecore.util.MUtil;
 import com.massivecraft.massivecore.util.Txt;
+import org.bukkit.command.CommandSender;
 
-public class ReqHasntFaction extends ReqAbstract
+public class ReqHasntFaction extends RequirementAbstract
 {
+	// -------------------------------------------- //
+	// SERIALIZABLE
+	// -------------------------------------------- //
+	
 	private static final long serialVersionUID = 1L;
 	
 	// -------------------------------------------- //
@@ -35,7 +38,7 @@ public class ReqHasntFaction extends ReqAbstract
 	@Override
 	public String createErrorMessage(CommandSender sender, MassiveCommand command)
 	{
-		return Txt.parse("<b>You must leave your current faction before you "+(command == null ? "do that" : command.getDesc())+".");
+		return Txt.parse("<b>You must leave your current faction before you %s.", getDesc(command));
 	}
 	
 }

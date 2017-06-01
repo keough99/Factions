@@ -1,28 +1,25 @@
 package com.massivecraft.factions.engine;
 
-import java.security.InvalidParameterException;
-import java.util.ArrayList;
-import java.util.List;
-
+import com.massivecraft.factions.entity.MConf;
+import com.massivecraft.factions.entity.MPlayer;
+import com.massivecraft.massivecore.Engine;
+import com.massivecraft.massivecore.event.EventMassiveCorePlayerLeave;
+import com.massivecraft.massivecore.particleeffect.ParticleEffect;
+import com.massivecraft.massivecore.ps.PS;
+import com.massivecraft.massivecore.util.MUtil;
+import com.massivecraft.massivecore.util.PeriodUtil;
 import org.bukkit.Location;
 import org.bukkit.World;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.EventPriority;
 import org.bukkit.event.player.PlayerChangedWorldEvent;
-import org.bukkit.plugin.Plugin;
 
-import com.massivecraft.factions.Factions;
-import com.massivecraft.factions.entity.MConf;
-import com.massivecraft.factions.entity.MPlayer;
-import com.massivecraft.massivecore.EngineAbstract;
-import com.massivecraft.massivecore.event.EventMassiveCorePlayerLeave;
-import com.massivecraft.massivecore.particleeffect.ParticleEffect;
-import com.massivecraft.massivecore.ps.PS;
-import com.massivecraft.massivecore.util.MUtil;
-import com.massivecraft.massivecore.util.PeriodUtil;
+import java.security.InvalidParameterException;
+import java.util.ArrayList;
+import java.util.List;
 
-public class EngineSeeChunk extends EngineAbstract
+public class EngineSeeChunk extends Engine
 {	
 	// -------------------------------------------- //
 	// INSTANCE & CONSTRUCT
@@ -30,22 +27,9 @@ public class EngineSeeChunk extends EngineAbstract
 	
 	private static EngineSeeChunk i = new EngineSeeChunk();
 	public static EngineSeeChunk get() { return i; }
-	public EngineSeeChunk() {}
-	
-	// -------------------------------------------- //
-	// OVERRIDE
-	// -------------------------------------------- //
-	
-	@Override
-	public Plugin getPlugin()
+	public EngineSeeChunk()
 	{
-		return Factions.get();
-	}
-	
-	@Override
-	public Long getPeriod()
-	{
-		return 1L;
+		this.setPeriod(1L);
 	}
 	
 	// -------------------------------------------- //
@@ -128,7 +112,7 @@ public class EngineSeeChunk extends EngineAbstract
 		if (step >= steps) throw new InvalidParameterException("step must be less than steps");
 		
 		// Create Ret
-		List<Location> ret = new ArrayList<Location>();
+		List<Location> ret = new ArrayList<>();
 		
 		final Location location = player.getLocation();
 		final World world = location.getWorld();

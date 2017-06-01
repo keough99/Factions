@@ -1,15 +1,15 @@
 package com.massivecraft.factions.integration;
 
-import java.util.HashSet;
-import java.util.Set;
-
 import com.massivecraft.factions.EconomyParticipator;
+import com.massivecraft.factions.entity.Faction;
 import com.massivecraft.factions.entity.MConf;
 import com.massivecraft.factions.entity.MPerm;
 import com.massivecraft.factions.entity.MPlayer;
-import com.massivecraft.factions.entity.Faction;
 import com.massivecraft.factions.util.RelationUtil;
 import com.massivecraft.massivecore.money.Money;
+
+import java.util.HashSet;
+import java.util.Set;
 
 public class Econ
 {
@@ -31,7 +31,7 @@ public class Econ
 		if (!isEnabled()) return true;
 		if (cost == 0D) return true;
 		
-		if (usender.isUsingAdminMode()) return true;
+		if (usender.isOverriding()) return true;
 		
 		Faction usenderFaction = usender.getFaction();
 		
@@ -72,7 +72,7 @@ public class Econ
 		if (me == null) return true;
 		
 		// Always accept when in admin mode.
-		if (me instanceof MPlayer && ((MPlayer)me).isUsingAdminMode()) return true;
+		if (me instanceof MPlayer && ((MPlayer)me).isOverriding()) return true;
 		
 		// Always accept control of self
 		if (me == you) return true;
@@ -160,7 +160,7 @@ public class Econ
 	
 	public static Set<MPlayer> getMPlayers(EconomyParticipator ep)
 	{
-		Set<MPlayer> mplayers = new HashSet<MPlayer>();
+		Set<MPlayer> mplayers = new HashSet<>();
 		
 		if (ep == null)
 		{
@@ -180,7 +180,7 @@ public class Econ
 	
 	public static void sendTransferInfo(EconomyParticipator invoker, EconomyParticipator from, EconomyParticipator to, double amount)
 	{
-		Set<MPlayer> recipients = new HashSet<MPlayer>();
+		Set<MPlayer> recipients = new HashSet<>();
 		recipients.addAll(getMPlayers(invoker));
 		recipients.addAll(getMPlayers(from));
 		recipients.addAll(getMPlayers(to));

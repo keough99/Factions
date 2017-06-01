@@ -1,16 +1,16 @@
 package com.massivecraft.factions.cmd;
 
-import java.util.LinkedHashSet;
-import java.util.Set;
-
 import com.massivecraft.factions.Perm;
 import com.massivecraft.factions.entity.BoardColl;
 import com.massivecraft.factions.entity.Faction;
 import com.massivecraft.factions.entity.MConf;
-import com.massivecraft.massivecore.cmd.req.ReqHasPerm;
-import com.massivecraft.massivecore.cmd.req.ReqIsPlayer;
+import com.massivecraft.massivecore.command.requirement.RequirementHasPerm;
+import com.massivecraft.massivecore.command.requirement.RequirementIsPlayer;
 import com.massivecraft.massivecore.ps.PS;
 import com.massivecraft.massivecore.util.MUtil;
+
+import java.util.LinkedHashSet;
+import java.util.Set;
 
 
 public class CmdFactionsSetFill extends CmdFactionsSetXSimple
@@ -32,9 +32,9 @@ public class CmdFactionsSetFill extends CmdFactionsSetXSimple
 		this.setFormatMany("<h>%s<i> %s <h>%d <i>chunks near %s<i> using fill.");
 		
 		// Requirements
-		this.addRequirements(ReqIsPlayer.get());
-		String node = claim ? Perm.CLAIM_FILL.node : Perm.UNCLAIM_FILL.node;
-		this.addRequirements(ReqHasPerm.get(node));
+		this.addRequirements(RequirementIsPlayer.get());
+		Perm perm = claim ? Perm.CLAIM_FILL : Perm.UNCLAIM_FILL;
+		this.addRequirements(RequirementHasPerm.get(perm));
 	}
 
 	// -------------------------------------------- //
@@ -46,7 +46,7 @@ public class CmdFactionsSetFill extends CmdFactionsSetXSimple
 	{
 		// Common Startup
 		final PS chunk = PS.valueOf(me.getLocation()).getChunk(true);
-		final Set<PS> chunks = new LinkedHashSet<PS>();
+		final Set<PS> chunks = new LinkedHashSet<>();
 		
 		// What faction (aka color) resides there?
 		// NOTE: Wilderness/None is valid. 
@@ -81,7 +81,7 @@ public class CmdFactionsSetFill extends CmdFactionsSetXSimple
 		if (color == null) throw new NullPointerException("color");
 		
 		// Expand
-		Set<PS> expansion = new LinkedHashSet<PS>();
+		Set<PS> expansion = new LinkedHashSet<>();
 		for (PS chunk : set)
 		{
 			Set<PS> neighbours = MUtil.set(

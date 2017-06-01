@@ -1,12 +1,11 @@
 package com.massivecraft.factions.chat.tag;
 
-import org.bukkit.command.CommandSender;
-
-import com.massivecraft.factions.chat.ChatTagAbstract;
+import com.massivecraft.factions.chat.ChatTag;
 import com.massivecraft.factions.entity.MPlayer;
 import com.massivecraft.massivecore.util.Txt;
+import org.bukkit.command.CommandSender;
 
-public class ChatTagRole extends ChatTagAbstract
+public class ChatTagRole extends ChatTag
 {
 	// -------------------------------------------- //
 	// INSTANCE & CONSTRUCT

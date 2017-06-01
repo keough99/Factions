@@ -1,19 +1,18 @@
 package com.massivecraft.factions.event;
 
-import java.util.Collections;
-import java.util.LinkedHashMap;
-import java.util.Map;
-import java.util.Map.Entry;
-import java.util.Set;
-
-import org.bukkit.command.CommandSender;
-import org.bukkit.event.HandlerList;
-
 import com.massivecraft.factions.entity.BoardColl;
 import com.massivecraft.factions.entity.Faction;
 import com.massivecraft.factions.entity.MPlayer;
 import com.massivecraft.massivecore.ps.PS;
 import com.massivecraft.massivecore.util.MUtil;
+import org.bukkit.command.CommandSender;
+import org.bukkit.event.HandlerList;
+
+import java.util.Collections;
+import java.util.LinkedHashMap;
+import java.util.Map;
+import java.util.Map.Entry;
+import java.util.Set;
 
 public class EventFactionsChunksChange extends EventFactionsAbstractSender
 {	
@@ -60,10 +59,10 @@ public class EventFactionsChunksChange extends EventFactionsAbstractSender
 		this.oldChunkFaction = Collections.unmodifiableMap(BoardColl.getChunkFaction(chunks));
 		this.oldFactionChunks = Collections.unmodifiableMap(MUtil.reverseIndex(this.oldChunkFaction));
 		
-		MPlayer msender = this.getMSender();
+		MPlayer msender = this.getMPlayer();
 		Faction self = null;
 		if (msender != null) self = msender.getFaction();
-		Map<PS, EventFactionsChunkChangeType> currentChunkType = new LinkedHashMap<PS, EventFactionsChunkChangeType>();
+		Map<PS, EventFactionsChunkChangeType> currentChunkType = new LinkedHashMap<>();
 		for (Entry<PS, Faction> entry : this.oldChunkFaction.entrySet())
 		{
 			PS chunk = entry.getKey();

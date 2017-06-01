@@ -1,13 +1,11 @@
 package com.massivecraft.factions.cmd;
 
-import com.massivecraft.factions.Perm;
 import com.massivecraft.factions.cmd.type.TypeMPlayer;
 import com.massivecraft.factions.entity.BoardColl;
 import com.massivecraft.factions.entity.MPerm;
 import com.massivecraft.factions.entity.MPlayer;
 import com.massivecraft.massivecore.MassiveException;
-import com.massivecraft.massivecore.cmd.req.ReqHasPerm;
-import com.massivecraft.massivecore.cmd.type.TypeBoolean;
+import com.massivecraft.massivecore.command.type.primitive.TypeBooleanYes;
 
 public class CmdFactionsAccessPlayer extends CmdFactionsAccessAbstract
 {
@@ -17,15 +15,9 @@ public class CmdFactionsAccessPlayer extends CmdFactionsAccessAbstract
 	
 	public CmdFactionsAccessPlayer()
 	{
-		// Aliases
-		this.addAliases("player");
-
 		// Parameters
 		this.addParameter(TypeMPlayer.get(), "player");
-		this.addParameter(TypeBoolean.get(), "yes/no", "toggle");
-
-		// Requirements
-		this.addRequirements(ReqHasPerm.get(Perm.ACCESS_PLAYER.node));
+		this.addParameter(TypeBooleanYes.get(), "yes/no", "toggle");
 	}
 	
 	// -------------------------------------------- //
@@ -37,7 +29,7 @@ public class CmdFactionsAccessPlayer extends CmdFactionsAccessAbstract
 	{
 		// Args
 		MPlayer mplayer = this.readArg();
-		boolean newValue = this.readArg(!ta.isPlayerIdGranted(mplayer.getId()));
+		boolean newValue = this.readArg(!ta.isMPlayerGranted(mplayer));
 		
 		// MPerm
 		if (!MPerm.getPermAccess().has(msender, hostFaction, true)) return;

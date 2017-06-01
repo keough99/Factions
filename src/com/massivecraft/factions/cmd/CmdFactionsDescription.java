@@ -1,14 +1,12 @@
 package com.massivecraft.factions.cmd;
 
-import com.massivecraft.factions.Perm;
 import com.massivecraft.factions.cmd.req.ReqHasFaction;
 import com.massivecraft.factions.entity.MPerm;
 import com.massivecraft.factions.entity.MPlayer;
 import com.massivecraft.factions.event.EventFactionsDescriptionChange;
 import com.massivecraft.massivecore.MassiveException;
-import com.massivecraft.massivecore.cmd.req.ReqHasPerm;
-import com.massivecraft.massivecore.cmd.type.TypeString;
-import com.massivecraft.massivecore.mixin.Mixin;
+import com.massivecraft.massivecore.command.type.primitive.TypeString;
+import com.massivecraft.massivecore.mixin.MixinDisplayName;
 
 public class CmdFactionsDescription extends FactionsCommand
 {
@@ -18,14 +16,10 @@ public class CmdFactionsDescription extends FactionsCommand
 	
 	public CmdFactionsDescription()
 	{
-		// Aliases
-		this.addAliases("description");
-
 		// Parameters
 		this.addParameter(TypeString.get(), "desc", true);
 
 		// Requirements
-		this.addRequirements(ReqHasPerm.get(Perm.DESCRIPTION.node));
 		this.addRequirements(ReqHasFaction.get());
 	}
 
@@ -54,7 +48,7 @@ public class CmdFactionsDescription extends FactionsCommand
 		// Inform
 		for (MPlayer follower : msenderFaction.getMPlayers())
 		{
-			follower.msg("<i>%s <i>set your faction description to:\n%s", Mixin.getDisplayName(sender, follower), msenderFaction.getDescription());
+			follower.msg("<i>%s <i>set your faction description to:\n%s", MixinDisplayName.get().getDisplayName(sender, follower), msenderFaction.getDescriptionDesc());
 		}
 	}
 	

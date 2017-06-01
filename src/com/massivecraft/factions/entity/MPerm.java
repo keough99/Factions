@@ -1,27 +1,27 @@
 package com.massivecraft.factions.entity;
 
+import com.massivecraft.factions.Perm;
+import com.massivecraft.factions.Rel;
+import com.massivecraft.factions.TerritoryAccess;
+import com.massivecraft.factions.cmd.CmdFactions;
+import com.massivecraft.factions.event.EventFactionsCreatePerms;
+import com.massivecraft.massivecore.Named;
+import com.massivecraft.massivecore.Prioritized;
+import com.massivecraft.massivecore.Registerable;
+import com.massivecraft.massivecore.comparator.ComparatorSmart;
+import com.massivecraft.massivecore.predicate.PredicateIsRegistered;
+import com.massivecraft.massivecore.ps.PS;
+import com.massivecraft.massivecore.store.Entity;
+import com.massivecraft.massivecore.util.MUtil;
+import com.massivecraft.massivecore.util.Txt;
+import org.bukkit.entity.Player;
+
 import java.util.ArrayList;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Set;
 
-import org.bukkit.entity.Player;
-
-import com.massivecraft.factions.Factions;
-import com.massivecraft.factions.Perm;
-import com.massivecraft.factions.Rel;
-import com.massivecraft.factions.TerritoryAccess;
-import com.massivecraft.factions.event.EventFactionsCreatePerms;
-import com.massivecraft.massivecore.PredicateIsRegistered;
-import com.massivecraft.massivecore.Prioritized;
-import com.massivecraft.massivecore.PriorityComparator;
-import com.massivecraft.massivecore.Registerable;
-import com.massivecraft.massivecore.ps.PS;
-import com.massivecraft.massivecore.store.Entity;
-import com.massivecraft.massivecore.util.MUtil;
-import com.massivecraft.massivecore.util.Txt;
-
-public class MPerm extends Entity<MPerm> implements Prioritized, Registerable
+public class MPerm extends Entity<MPerm> implements Prioritized, Registerable, Named
 {
 	// -------------------------------------------- //
 	// CONSTANTS
@@ -98,7 +98,7 @@ public class MPerm extends Entity<MPerm> implements Prioritized, Registerable
 		setupStandardPerms();
 		new EventFactionsCreatePerms().run();
 		
-		return MPermColl.get().getAll(PredicateIsRegistered.get(), PriorityComparator.get());
+		return MPermColl.get().getAll(PredicateIsRegistered.get(), ComparatorSmart.get());
 	}
 	
 	public static void setupStandardPerms()
@@ -216,7 +216,7 @@ public class MPerm extends Entity<MPerm> implements Prioritized, Registerable
 	// I just added the name in case anyone feel like renaming their perms for some reason.
 	// Example: "build"
 	private String name = "defaultName";
-	public String getName() { return this.name; }
+	@Override public String getName() { return this.name; }
 	public MPerm setName(String name) { this.name = name; this.changed(); return this; }
 	
 	// The perm function described as an "order".
@@ -231,7 +231,7 @@ public class MPerm extends Entity<MPerm> implements Prioritized, Registerable
 	// What is the standard (aka default) perm value?
 	// This value will be set for factions from the beginning.
 	// Example: ... set of relations ...
-	private Set<Rel> standard = new LinkedHashSet<Rel>();
+	private Set<Rel> standard = new LinkedHashSet<>();
 	public Set<Rel> getStandard() { return this.standard; }
 	public MPerm setStandard(Set<Rel> standard) { this.standard = standard; this.changed(); return this; }
 	
@@ -244,7 +244,7 @@ public class MPerm extends Entity<MPerm> implements Prioritized, Registerable
 	
 	// Is this perm editable by players?
 	// With this we mean standard non administrator players.
-	// All perms can be changed using /f admin.
+	// All perms can be changed using /f override.
 	// Example: true (all perms are editable by default)
 	private boolean editable = false;
 	public boolean isEditable() { return this.editable; }
@@ -252,7 +252,7 @@ public class MPerm extends Entity<MPerm> implements Prioritized, Registerable
 	
 	// Is this perm visible to players?
 	// With this we mean standard non administrator players.
-	// All perms can be seen using /f admin.
+	// All perms can be seen using /f override.
 	// Some perms can be rendered meaningless by settings in Factions or external plugins.
 	// Say we set "editable" to false.
 	// In such case we might want to hide the perm by setting "visible" false.
@@ -295,9 +295,9 @@ public class MPerm extends Entity<MPerm> implements Prioritized, Registerable
 		String ret = Txt.parse("%s<b> does not allow you to %s<b>.", hostFaction.describeTo(mplayer, true), this.getDesc());
 		
 		Player player = mplayer.getPlayer();
-		if (player != null && Perm.ADMIN.has(player))
+		if (player != null && Perm.OVERRIDE.has(player))
 		{
-			ret += Txt.parse("\n<i>You can bypass by using " + Factions.get().getOuterCmdFactions().cmdFactionsAdmin.getTemplate(false).toPlain(true));
+			ret += Txt.parse("\n<i>You can bypass by using " + CmdFactions.get().cmdFactionsOverride.getTemplate(false).toPlain(true));
 		}
 		
 		return ret;
@@ -305,7 +305,7 @@ public class MPerm extends Entity<MPerm> implements Prioritized, Registerable
 	
 	public String getDesc(boolean withName, boolean withDesc)
 	{
-		List<String> parts = new ArrayList<String>();
+		List<String> parts = new ArrayList<>();
 		
 		if (withName)
 		{
@@ -354,7 +354,7 @@ public class MPerm extends Entity<MPerm> implements Prioritized, Registerable
 		if (mplayer == null) throw new NullPointerException("mplayer");
 		if (hostFaction == null) throw new NullPointerException("hostFaction");
 		
-		if (mplayer.isUsingAdminMode()) return true;
+		if (mplayer.isOverriding()) return true;
 		
 		Rel rel = mplayer.getRelationTo(hostFaction);
 		if (hostFaction.isPermitted(this, rel)) return true;
@@ -370,7 +370,7 @@ public class MPerm extends Entity<MPerm> implements Prioritized, Registerable
 		if (mplayer == null) throw new NullPointerException("mplayer");
 		if (ps == null) throw new NullPointerException("ps");
 		
-		if (mplayer.isUsingAdminMode()) return true;
+		if (mplayer.isOverriding()) return true;
 		
 		TerritoryAccess ta = BoardColl.get().getTerritoryAccessAt(ps);
 		Faction hostFaction = ta.getHostFaction();

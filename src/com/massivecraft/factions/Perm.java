@@ -1,10 +1,10 @@
 package com.massivecraft.factions;
 
+import com.massivecraft.massivecore.Identified;
+import com.massivecraft.massivecore.util.PermissionUtil;
 import org.bukkit.permissions.Permissible;
 
-import com.massivecraft.massivecore.util.PermUtil;
-
-public enum Perm
+public enum Perm implements Identified
 {
 	// -------------------------------------------- //
 	// ENUM
@@ -14,7 +14,8 @@ public enum Perm
 	ACCESS_VIEW,
 	ACCESS_PLAYER,
 	ACCESS_FACTION,
-	ADMIN,
+	OVERRIDE,
+	BASECOMMAND,
 	CLAIM,
 	CLAIM_ONE,
 	CLAIM_AUTO,
@@ -38,7 +39,6 @@ public enum Perm
 	INVITE_ADD,
 	INVITE_REMOVE,
 	JOIN,
-	JOIN_ANY,
 	JOIN_OTHERS,
 	KICK,
 	LEAVE,
@@ -60,10 +60,16 @@ public enum Perm
 	PERM_SHOW,
 	PLAYER,
 	POWERBOOST,
+	POWERBOOST_PLAYER,
+	POWERBOOST_FACTION,
+	POWERBOOST_SET,
 	RANK,
 	RANK_SHOW,
 	RANK_ACTION,
 	RELATION,
+	RELATION_SET,
+	RELATION_LIST,
+	RELATION_WISHES,
 	SEECHUNK,
 	SEECHUNKOLD,
 	SETHOME,
@@ -82,6 +88,8 @@ public enum Perm
 	UNCLAIM_ALL,
 	UNSETHOME,
 	UNSTUCK,
+	CONFIG,
+	CLEAN,
 	VERSION,
 	
 	// END OF LIST
@@ -91,7 +99,8 @@ public enum Perm
 	// FIELDS
 	// -------------------------------------------- //
 	
-	public final String node;
+	private final String id;
+	@Override public String getId() { return this.id; }
 	
 	// -------------------------------------------- //
 	// CONSTRUCT
@@ -99,21 +108,21 @@ public enum Perm
 	
 	Perm()
 	{
-		this.node = "factions." + this.name().toLowerCase().replace('_', '.');
+		this.id = PermissionUtil.createPermissionId(Factions.get(), this);
 	}
 	
 	// -------------------------------------------- //
 	// HAS
 	// -------------------------------------------- //
 	
-	public boolean has(Permissible permissible, boolean informSenderIfNot)
+	public boolean has(Permissible permissible, boolean verboose)
 	{
-		return PermUtil.has(permissible, this.node, informSenderIfNot);
+		return PermissionUtil.hasPermission(permissible, this, verboose);
 	}
 	
 	public boolean has(Permissible permissible)
 	{
-		return has(permissible, false);
+		return PermissionUtil.hasPermission(permissible, this);
 	}
 	
 }

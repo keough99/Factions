@@ -1,21 +1,19 @@
 package com.massivecraft.factions.cmd;
 
-import org.bukkit.ChatColor;
-
 import com.massivecraft.factions.Factions;
 import com.massivecraft.factions.Perm;
 import com.massivecraft.factions.cmd.type.TypeFaction;
 import com.massivecraft.factions.cmd.type.TypeMPlayer;
+import com.massivecraft.factions.entity.Faction;
 import com.massivecraft.factions.entity.MConf;
 import com.massivecraft.factions.entity.MFlag;
 import com.massivecraft.factions.entity.MPlayer;
-import com.massivecraft.factions.entity.Faction;
 import com.massivecraft.factions.event.EventFactionsMembershipChange;
 import com.massivecraft.factions.event.EventFactionsMembershipChange.MembershipChangeReason;
 import com.massivecraft.massivecore.MassiveException;
-import com.massivecraft.massivecore.cmd.req.ReqHasPerm;
 import com.massivecraft.massivecore.mson.Mson;
 import com.massivecraft.massivecore.util.Txt;
+import org.bukkit.ChatColor;
 
 public class CmdFactionsJoin extends FactionsCommand
 {
@@ -25,15 +23,9 @@ public class CmdFactionsJoin extends FactionsCommand
 	
 	public CmdFactionsJoin()
 	{
-		// Aliases
-		this.addAliases("join");
-
 		// Parameters
 		this.addParameter(TypeFaction.get(), "faction");
 		this.addParameter(TypeMPlayer.get(), "player", "you");
-
-		// Requirements
-		this.addRequirements(ReqHasPerm.get(Perm.JOIN.node));
 	}
 
 	// -------------------------------------------- //
@@ -60,7 +52,7 @@ public class CmdFactionsJoin extends FactionsCommand
 
 		if (faction == mplayerFaction)
 		{
-			String command = Factions.get().getOuterCmdFactions().cmdFactionsKick.getCommandLine(mplayer.getName());
+			String command = CmdFactions.get().cmdFactionsKick.getCommandLine(mplayer.getName());
 			
 			// Mson creation
 			Mson alreadyMember = Mson.mson(
@@ -80,7 +72,7 @@ public class CmdFactionsJoin extends FactionsCommand
 
 		if (mplayerFaction.isNormal())
 		{
-			String command = Factions.get().getOuterCmdFactions().cmdFactionsLeave.getCommandLine(mplayer.getName());
+			String command = CmdFactions.get().cmdFactionsLeave.getCommandLine(mplayer.getName());
 			
 			// Mson creation
 			Mson leaveFirst = Mson.mson(
@@ -98,7 +90,7 @@ public class CmdFactionsJoin extends FactionsCommand
 			return;
 		}
 
-		if( ! (faction.getFlag(MFlag.getFlagOpen()) || faction.isInvited(mplayer) || msender.isUsingAdminMode() || Perm.JOIN_ANY.has(sender, false)))
+		if( ! (faction.getFlag(MFlag.getFlagOpen()) || faction.isInvited(mplayer) || msender.isOverriding()))
 		{
 			msg("<i>This faction requires invitation.");
 			if (samePlayer)
@@ -124,8 +116,8 @@ public class CmdFactionsJoin extends FactionsCommand
 		// Apply
 		mplayer.resetFactionData();
 		mplayer.setFaction(faction);
-	    
-		faction.setInvited(mplayer, false);
+		
+		faction.uninvite(mplayer);
 
 		// Derplog
 		if (MConf.get().logFactionJoin)
